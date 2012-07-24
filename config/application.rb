@@ -37,7 +37,7 @@ module AhnLogviz
     # config.i18n.default_locale = :de
 
     config.generators do |g|
-      g.orm :mongo_mapper
+      g.orm :mongoid
     end
 
     # Configure the default encoding used in templates for Ruby 1.9.
