@@ -30,14 +30,12 @@ class LogParser
     first_event = get_event read_next_message while first_event == nil
     @main_call = first_event[0][:from]
     puts @main_call
-    translate first_event
+    translate find_dial(first_event)
     current_event = [{}]
     until current_event[0][:event] == "Hangup" && current_event[0][:to] == @main_call do
       current_event = get_event read_next_message
-      while current_event == nil do
-        current_event = get_event read_next_message 
-      end
-      translate current_event
+      current_event = get_event read_next_message while current_event.nil?
+      translate find_dial(current_event)
     end
   end
 
@@ -61,12 +59,12 @@ class LogParser
       case message
       when /offer/
         from = call_id
-        to = "adhearsion"
+        to = nil
         event = "Dial"
 
         message_data = [{from: from, to: to, event: event}]
       when /ringing/
-        from = "adhearsion"
+        from = nil
         to = call_id
         event = "Ringing"
 
@@ -107,6 +105,7 @@ class LogParser
     else 
       message_data = nil
     end
+    puts "#{message_data}"
     message_data
   end
 
@@ -155,6 +154,17 @@ class LogParser
       @post_data += "participant #{v} as #{k}\n"
     end
     @post_data += @event_data
+  end
+
+  def find_dial(event)
+    if (event[0][:event] == "Dial") && event[0][:to].nil?
+      puts "Finding Dial To..."
+      dial_to = nil
+      dial_to = get_event read_next_message while dial_to.nil?
+      event[0][:to] = dial_to[0][:to]
+      event += [{from: dial_to[0][:to], to: dial_to[0][:to], event: "Ringing"}]
+    end
+    event
   end
 
   def send_results
