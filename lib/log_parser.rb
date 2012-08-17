@@ -11,13 +11,14 @@ class LogParser
     @event_data = ""
     @post_data = ""
     @stored_line = ""
+    @line_number = 0
   end
 
   def start
     begin
       read_call
-    # rescue EOFError
-    #   @log.close
+    rescue EOFError
+      @log.close
     ensure
       prepare_results
       send_results
@@ -33,7 +34,10 @@ class LogParser
   end
 
   def read_call
-    first_event = get_event read_next_message(@stored_line) while first_event == nil
+    first_event = nil
+    while first_event == nil do
+      first_event = get_event read_next_message(@stored_line)
+    end
     @main_call = first_event[0][:from]
     puts @main_call
     translate find_dial(first_event)
@@ -46,11 +50,15 @@ class LogParser
   end
 
   def read_next_message(line = "")
-    line = @log.readline until trace_message? line
+    until trace_message? line do
+      line = @log.readline
+      @line_number += 1
+    end
     message = line
     line = ""
     until timestamped? line do
       line = @log.readline
+      @line_number += 1
       if timestamped? line
         @stored_line = line
       else
@@ -73,7 +81,7 @@ class LogParser
 
         message_data = [{from: from, to: to, event: event}]
       when /ringing/
-        from = nil
+        from = call_id
         to = call_id
         event = "Ringing"
 
@@ -111,7 +119,7 @@ class LogParser
         else
           message_data = nil
         end
-      when /end/
+      when /hangup/
         from = call_id
         to = call_id
         event = "Hangup"
@@ -122,22 +130,15 @@ class LogParser
       end
     when /RubyAMI::Client: \[RECV\-EVENTS\]:/
       case message
-      when /EXEC RINGING/
-        channel = extract_channel_id_from_address message.split("Channel\"=>\"")[1].split("\"")[0]
-        to = channel
-        from = channel
-        event = "Ringing"
-
-        message_data = [{from: from, to: to, event: event}]
       when /Newstate/
         channel = extract_channel_id_from_address message.split("Channel\"=>\"")[1].split("\"")[0]
         case message
-        # when /Ring/
-        #   to = channel
-        #   from = channel
-        #   event = "Ringing"
+        when /Ring/
+          to = channel
+          from = channel
+          event = "Ringing"
 
-        #   message_data = [{from: from, to: to, event: event}]
+          message_data = [{from: from, to: to, event: event}]
         when /\"ChannelStateDesc\"=>\"Up\"/
           message_data = [{from: channel, to: channel, event: "Answered"}]
         else
@@ -146,11 +147,15 @@ class LogParser
       when /ConfbridgeJoin/
         channel = extract_channel_id_from_address message.split("Channel\"=>\"")[1].split("\"")[0]
         from = channel
-        to = message.split("Conference\"=>\"")[1].split("\"")[0]
+        unless conf_bridge_exist? message.split("Conference\"=>\"")[1].split("\"")[0]
+          to = new_conf_bridge message.split("Conference\"=>\"")[1].split("\"")[0]
+        else
+          to = message.split("Conference\"=>\"")[1].split("\"")[0]
+        end
         event = "Joined"
 
         message_data = [{from: from, to: to, event: event}]
-        @main_call = to
+        @main_call = from
       when /ConfbridgeLeave/
         channel = extract_channel_id_from_address message.split("Channel\"=>\"")[1].split("\"")[0]
         from = message.split("Conference\"=>\"")[1].split("\"")[0]
@@ -158,15 +163,17 @@ class LogParser
         event = "Unjoined"
 
         message_data = [{from: from, to: to, event: event}]
-        @main_call = to
       else
         message_data = nil
       end
     when /RubyAMI::Client: \[SEND\]:/
-      if message =~ /hangup/
+      case message 
+      when /hangup/
         puts "Hangup message: #{message}"
         channel = extract_channel_id_from_address message.split("Channel: ")[1].strip
         message_data = [{from: channel, to: channel, event: "Hangup"}]
+      when /originate/
+        message_data = [{from: @main_call, to: nil, event: "Dial"}]
       else
         message_data = nil
       end
@@ -182,6 +189,11 @@ class LogParser
 
   def extract_channel_id_from_address(address)
     address.split("/")[1].delete("-")
+  end
+
+  def new_conf_bridge(conf_name)
+    @entities["#{conf_name}"] = "#{conf_name}"
+    conf_name
   end
 
   def new_joined_call(calls = [])
@@ -212,7 +224,7 @@ class LogParser
     data.each do |event|
       new_call_ref event[:from] unless @entities.keys.include? event[:from]
       new_call_ref event[:to] unless @entities.keys.include? event[:to]
-      puts "#{event[:from]}->#{event[:to]}: #{event[:event]}\n"
+      puts "#{@line_number}: #{event[:from]}->#{event[:to]}: #{event[:event]}\n"
       @event_data += "#{event[:from]}->#{event[:to]}: #{event[:event]}\n"
     end
   end
@@ -229,6 +241,10 @@ class LogParser
       end
     end
     has_joined_call
+  end
+
+  def conf_bridge_exist?(conf_name)
+    @entities.keys.include? conf_name
   end
 
   def remove_joined_call(calls)
@@ -258,11 +274,24 @@ class LogParser
   def find_dial(event)
     unless event[0].nil?
       if (event[0][:event] == "Dial") && event[0][:to].nil?
-        puts "Finding Dial To..."
-        dial_to = nil
-        dial_to = get_event read_next_message while dial_to.nil?
-        event[0][:to] = dial_to[0][:to]
-        event += [{from: dial_to[0][:to], to: dial_to[0][:to], event: "Ringing"}]
+        if event[0][:from] == @main_call
+          puts "Finding Dial To..."
+          next_event = nil
+          next_event = get_event read_next_message(@stored_line) while next_event.nil?
+          until next_event[0][:event] == "Ringing" do
+            translate find_dial(next_event)
+            next_event = nil
+            next_event = get_event read_next_message(@stored_line) while next_event.nil?
+          end
+          event[0][:to] = next_event[0][:to]
+          event += [{from: next_event[0][:to], to: next_event[0][:from], event: next_event[0][:event]}]
+        else
+          puts "Finding Dial To..."
+          dial_to = nil
+          dial_to = get_event read_next_message while dial_to.nil?
+          event[0][:to] = dial_to[0][:to]
+          event += [{from: dial_to[0][:to], to: dial_to[0][:from], event: dial_to[0][:event]}]
+        end
       end
       event
     else
@@ -272,6 +301,6 @@ class LogParser
 
   def send_results
     response = Net::HTTP.post_form URI.parse("http://www.websequencediagrams.com/index.php"), 'style' => 'modern-blue', 'message' => @post_data
-    puts response
+    puts "http://www.websequencediagrams.com/" + response.body.split("{img: \"")[1].split("\"")[0]
   end
 end
