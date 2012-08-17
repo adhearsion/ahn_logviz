@@ -19,4 +19,16 @@ describe LogParser do
     end
   end
 
+  describe "#trace_message?" do
+    it "should return true if the message is a trace message" do
+      message = "[2000-01-01 00:30:45] TRACE Message goes here"
+      @parser.trace_message?(message).should == true
+    end
+
+    it "should return false if the message is not a trace message" do
+      message = "[2000-01-01 00:30:45] DEBUG This is not a trace message"
+      @parser.trace_message?(message).should == false
+    end
+  end
+
 end
