@@ -2,14 +2,16 @@ class CallLog
   include Mongoid::Document
 
   field :id,         type: String
-  field :start_time, type: DateTime
-  field :end_time,   type: DateTime
+  field :calls,      type: Hash
 
-  embeds_many :call_events
+  embeds_many :call_events, autosave: true
   validates_presence_of :id
 
-  def translate
-    messages.each do |message|
+  def start_time
+    self.call_events.min(:time)
+  end
 
-    end
+  def end_time
+    self.call_events.max(:time)
+  end
 end

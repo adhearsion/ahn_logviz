@@ -34,12 +34,14 @@ class LogParser
   end
 
   def read_call
+    @call_log = CallLog.new
     first_event = nil
     while first_event == nil do
       first_event = get_event read_next_message(@stored_line)
     end
     @main_call = first_event[0][:from]
     puts @main_call
+    @call_log.id = @main_call
     translate find_dial(first_event)
     current_event = first_event
     until current_event[0][:event] == "Hangup" && current_event[0][:to] == @main_call do
@@ -47,6 +49,8 @@ class LogParser
       current_event = get_event read_next_message(@stored_line) while current_event.nil?
       translate find_dial(current_event)
     end
+    @call_log.calls = @entities
+    @call_log.save
   end
 
   def read_next_message(line = "")
@@ -65,15 +69,15 @@ class LogParser
         message += line unless timestamped? line
       end
     end
-    message
+    { message: message, time: DateTime.strptime(message.split("]").delete("["), "%Y-%m-%d %H:%M:%S") }
   end
 
   def get_event(message)
     message_data = []
-    case message
+    case message[:message]
     when /RECEIVING \(presence\)/
       call_id = extract_call_id_from_address message.split(" ")[7].delete("\"").gsub("from=", '').delete("-")
-      case message
+      case message[:message]
       when /offer/
         from = call_id
         to = nil
@@ -129,7 +133,7 @@ class LogParser
         message_data = nil
       end
     when /RubyAMI::Client: \[RECV\-EVENTS\]:/
-      case message
+      case message[:message]
       when /Newstate/
         channel = extract_channel_id_from_address message.split("Channel\"=>\"")[1].split("\"")[0]
         case message
@@ -167,7 +171,7 @@ class LogParser
         message_data = nil
       end
     when /RubyAMI::Client: \[SEND\]:/
-      case message 
+      case message[:message]
       when /hangup/
         puts "Hangup message: #{message}"
         channel = extract_channel_id_from_address message.split("Channel: ")[1].strip
@@ -179,6 +183,11 @@ class LogParser
       end
     else 
       message_data = nil
+    end
+    unless message_data.nil?
+      message_data.each do |m|
+        m[:time] = message[:time]
+      end
     end
     message_data
   end
@@ -224,6 +233,7 @@ class LogParser
     data.each do |event|
       new_call_ref event[:from] unless @entities.keys.include? event[:from]
       new_call_ref event[:to] unless @entities.keys.include? event[:to]
+      @call_log.create_message time: event[:time], message: event.delete(:time)
       puts "#{@line_number}: #{event[:from]}->#{event[:to]}: #{event[:event]}\n"
       @event_data += "#{event[:from]}->#{event[:to]}: #{event[:event]}\n"
     end

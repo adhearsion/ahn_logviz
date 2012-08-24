@@ -1,9 +1,10 @@
 class CallEvent
   include Mongoid::Document
 
-  field :message,        type: String
-  field :parsed_message, type: String
+  field :message, type: Hash
+  field :time,    type: DateTime
 
   embedded_in :call_log
-  validates_presence_of :message, :parsed_message
+  accepts_nested_attributes_for :call_log
+  validates_presence_of :message
 end
