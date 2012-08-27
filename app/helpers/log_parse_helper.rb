@@ -4,7 +4,7 @@ require 'uri'
 module LogParseHelper
 
   def new_call_log(log)
-    @log = log
+    @log = File.open log
     @joined_calls = []
     @call_log = CallLog.new
     @call_log.calls = {"adhearsion" => "Adhearsion"}
