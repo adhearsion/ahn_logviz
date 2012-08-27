@@ -4,11 +4,10 @@ require 'uri'
 module LogParseHelper
 
   def new_call_log(log)
-    @log = File.open log
+    @log = log
     @joined_calls = []
     @call_log = CallLog.new
     @call_log.calls = {"adhearsion" => "Adhearsion"}
-    @line_number = 0
   end
 
   def read_call
@@ -27,13 +26,11 @@ module LogParseHelper
   def read_next_message(line = "")
     until trace_message? line do
       line = @log.readline
-      @line_number += 1
     end
     message = line
     line = ""
     until timestamped? line do
       line = @log.readline
-      @line_number += 1
       if timestamped? line
         @stored_line = line
       else
@@ -106,12 +103,11 @@ module LogParseHelper
           to = extract_conference_name message[:message]
         end
 
-        message_data = [{from: extract_channel_id_from_address extract_conference_name(message[:message]), 
-                         to: to, event: "Joined"}]
+        message_data = [{from: extract_conference_name(message[:message]), to: to, event: "Joined"}]
         @main_call = extract_channel_id_from_address extract_conference_name(message[:message])
       when /ConfbridgeLeave/
         message_data = [{from: message.split("Conference\"=>\"")[1].split("\"")[0], 
-                         to: extract_channel_id_from_address message.split("Channel\"=>\"")[1].split("\"")[0], 
+                         to: extract_channel_id_from_address(message.split("Channel\"=>\"")[1].split("\"")[0]), 
                          event: "Unjoined"}]
       else
         message_data = nil
@@ -190,7 +186,7 @@ module LogParseHelper
   end
 
   def conf_bridge_exist?(conf_name)
-    @call_log.calls.keys.include? conf_name
+    @call_log.calls.has_key? conf_name
   end
 
   def new_joined_call(calls)

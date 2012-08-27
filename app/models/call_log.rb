@@ -6,7 +6,7 @@ class CallLog
   field :calls,     type: Hash
   field :image_url, type: String
 
-  embeds_many :call_events, autosave: true
+  embeds_many :call_events
   embedded_in :adhearsion_log
   accepts_nested_attributes_for :adhearsion_log
   validates_presence_of :id
