@@ -1,0 +1,12 @@
+<html>
+<head>
+  <title>Adhearsion log <%= @ahn_log.id.to_s %></title>
+</head>
+<body>
+  <ol>
+    <% @ahn_log.call_logs.each do |log| %>
+     <li>Start Time: <%= log.start_time %>, End Time: <%= log.end_time %></li>
+    <% end %>
+  </ol>
+</body>
+</html>

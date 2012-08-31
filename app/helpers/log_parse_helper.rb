@@ -3,8 +3,12 @@ require 'uri'
 
 module LogParseHelper
 
-  def new_call_log(log)
+  def new_parser(log, ahn_log)
     @log = log
+    @ahn_log = ahn_log
+  end
+
+  def new_call_log
     @joined_calls = []
     @call_log = CallLog.new
     @call_log.calls = {"adhearsion" => "Adhearsion"}
@@ -14,12 +18,13 @@ module LogParseHelper
     first_event = get_next_event
     @main_call = first_event[0][:from]
     @call_log.id = @main_call
-    translate find_dial(first_event)
+    create_call_event find_dial(first_event)
     current_event = first_event
     until current_event[0][:event] == "Hangup" && current_event[0][:to] == @main_call do
       current_event = get_next_event
-      translate find_dial(current_event)
+      create_call_event find_dial(current_event)
     end
+    @call_log.adhearsion_log = @ahn_log
     @call_log.save
   end
 
@@ -138,7 +143,7 @@ module LogParseHelper
       if (event[0][:event] == "Dial") && event[0][:to].nil?
         next_event = get_next_event
         until next_event[0][:event] == "Ringing" do
-          translate find_dial(next_event)
+          create_call_event find_dial(next_event)
           next_event = get_next_event
         end
         event[0][:to] = next_event[0][:to]
@@ -147,6 +152,16 @@ module LogParseHelper
       event
     else
       nil
+    end
+  end
+
+  def create_call_event(event)
+    event.each do |e|
+      call_event = CallEvent.new
+      call_event.time = e[:time]
+      call_event.message = {from: e[:from], to: e[:to], event: e[:event]}
+      call_event.call_log = @call_log
+      call_event.save
     end
   end
 
