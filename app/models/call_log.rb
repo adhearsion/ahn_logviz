@@ -1,4 +1,5 @@
 class CallLog
+  include LogParseHelper
   include Mongoid::Document
 
   field :id,        type: String
@@ -7,7 +8,7 @@ class CallLog
   field :image_url, type: String
 
   embeds_many :call_events
-  embedded_in :adhearsion_log
+  belongs_to  :adhearsion_log
   accepts_nested_attributes_for :adhearsion_log
   validates_presence_of :id
 
@@ -24,8 +25,16 @@ class CallLog
     self.calls.each do |k, v|
       self.post_data += "participant #{v} as #{k}\n"
     end
-    self.call_events.each do |event|
-      self.post_data += "#{event.message[:from]}->#{event.message[:to]}: #{event.message[:event]}\n"
+    self.call_events.all.to_a.each do |event|
+      self.post_data += "#{event.message['from']}->#{event.message['to']}: #{event.message['event']}\n"
     end
+  end
+
+  def chart
+    unless File.exist? Rails.root.join('public', 'graphics', self.id.to_s)
+      self.translate
+      self.image_url = new_chart self.post_data, self.id.to_s
+    end
+    self.image_url
   end
 end
