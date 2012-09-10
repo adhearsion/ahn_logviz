@@ -24,15 +24,15 @@ class LogParser
 
   def read_call
     first_event = get_next_event
-    @main_call = first_event[0][:from]
-    @call_log = CallLog.new(id: @main_call, calls: {'adhearsion' => "Adhearsion"})
+    @main_calls = [first_event[0][:from]]
+    @call_log = CallLog.new(id: @main_calls[0], calls: {'adhearsion' => "Adhearsion"})
     @ahn_log.call_logs << @call_log
     @call_log.save
     create_call_event find_dial(first_event)
-    current_event = first_event
-    until current_event[0][:event] == "Hangup" && current_event[0][:to] == @main_call do
-      current_event = get_next_event
-      create_call_event find_dial(current_event)
+    @current_event = first_event
+    until calls_hungup? == true # do
+      @current_event = get_next_event
+      create_call_event find_dial(@current_event)
     end
     @call_log.save
   end
@@ -64,7 +64,7 @@ class LogParser
         message_data = [{from: call_id, to: nil, event: "Dial"}]
       when /ringing/
         message_data = [{from: call_id, to: call_id, event: "Ringing"}]
-        @main_call = call_id
+        @main_calls += [call_id]
       when /answered/
         message_data = [{from: call_id, to: call_id, event: "Answered"}]
       when /[^u][^n]joined/
@@ -81,7 +81,7 @@ class LogParser
           message_data = nil
         end
       when /unjoined/
-        from = get_joined_call([call_id, ""])[:calls] if get_joined_call([call_id, ""])
+        from = get_joined_call([call_id, ""]) if get_joined_call([call_id, ""])
         to = [call_id, message[:message].split("<unjoined ")[1].split(" ")[1].split("\"/>")[0].gsub("call-id=\"", '').delete("-")]
         event = "Unjoined"
 
@@ -116,9 +116,10 @@ class LogParser
         else
           to = extract_conference_name message[:message]
         end
+        from = extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0])
 
-        message_data = [{from: extract_conference_name(message[:message]), to: to, event: "Joined"}]
-        @main_call = extract_channel_id_from_address extract_conference_name(message[:message])
+        message_data = [{from: from, to: to, event: "Joined"}]
+        @main_calls += [from]
       when /ConfbridgeLeave/
         message_data = [{from: message[:message].split("Conference\"=>\"")[1].split("\"")[0], 
                          to: extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0]), 
@@ -132,7 +133,7 @@ class LogParser
         channel = extract_channel_id_from_address message[:message].split("Channel: ")[1].strip
         message_data = [{from: channel, to: channel, event: "Hangup"}]
       when /originate/
-        message_data = [{from: @main_call, to: nil, event: "Dial"}]
+        message_data = [{from: @main_calls.last, to: nil, event: "Dial"}]
       else
         message_data = nil
       end
@@ -229,4 +230,16 @@ class LogParser
     get_joined_call(calls)[:calls] = []
   end
 
+  def calls_hungup?
+    @main_calls.each do |call|
+      if @current_event[0][:event] == "Hangup" && @current_event[0][:to] == call
+        @main_calls.delete call
+      end
+    end
+    if @main_calls.empty?
+      true
+    else
+      false
+    end
+  end
 end

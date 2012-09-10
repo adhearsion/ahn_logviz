@@ -31,7 +31,7 @@ class CallLog
   end
 
   def chart
-    unless File.exist? Rails.root.join('public', 'graphics', self.id.to_s)
+    unless File.exist? Rails.root.join('public', 'assets', 'images', self.id.to_s)
       self.translate
       self.image_url = new_chart self.post_data, self.id.to_s
     end
