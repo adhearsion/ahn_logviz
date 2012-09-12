@@ -20,6 +20,22 @@ class CallLog
     self.call_events.max(:time)
   end
 
+  def call_array
+    call_array = []
+    self.calls.each do |k,v|
+      call_array += [[k, v]]
+    end
+    call_array
+  end
+
+  def event_array
+    event_array = []
+    self.call_events.all.to_a.each do |event|
+      event_array += [event.message.to_json.gsub('=', ':').delete("\\")]
+    end
+    event_array.to_a
+  end
+
   def translate
     self.post_data = "title Adhearsion Call #{self.id}\n"
     self.calls.each do |k, v|

@@ -2,6 +2,7 @@ require 'open-uri'
 require 'uri'
 require 'fileutils'
 require 'net/http'
+require 'json'
 
 module LogParseHelper
   def new_chart(data, filename)

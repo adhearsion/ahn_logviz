@@ -1,8 +1,4 @@
-<html>
-<head>
-  <title> Call Log <%= @call_log.id %></title>
-</head>
-<body>
-  <%= image_tag "images/#{@call_log.id}.png" %>
-</body>
-</html>
+  <canvas id="drawingCanvas"></canvas>
+  <script type="text/javascript">
+    draw_chart(<%= raw @call_log.event_array %>, <%= raw @call_log.call_array %>);
+  </script>

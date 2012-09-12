@@ -81,7 +81,7 @@ class LogParser
           message_data = nil
         end
       when /unjoined/
-        from = get_joined_call([call_id, ""]) if get_joined_call([call_id, ""])
+        from = get_joined_call([call_id, ""])[:joined_call] if get_joined_call([call_id, ""])
         to = [call_id, message[:message].split("<unjoined ")[1].split(" ")[1].split("\"/>")[0].gsub("call-id=\"", '').delete("-")]
         event = "Unjoined"
 
@@ -167,6 +167,8 @@ class LogParser
 
   def create_call_event(event)
     event.each do |e|
+      new_call_ref e[:from] unless @call_log.calls[e[:from]]
+      new_call_ref e[:to] unless @call_log.calls[e[:to]]
       @call_log.call_events << CallEvent.new(time: e[:time], message: {from: e[:from], to: e[:to], event: e[:event]})
     end
   end
@@ -223,7 +225,11 @@ class LogParser
         joined_call = joined if joined[:calls].include? call
       end
     end
-    joined_call[:joined_call]
+    unless joined_call.nil?
+      joined_call
+    else
+      nil
+    end
   end
 
   def remove_joined_call(calls)
