@@ -1,2 +1,4 @@
-<canvas id="drawingCanvas"></canvas>
-<%= javascript_include_tag "javascripts/drawing.js" %>
+<canvas id='drawingCanvas'></canvas>
+<script type="text/javascript">
+  draw_chart(<%= raw @call_log.event_array %>, <%= raw @call_log.call_array %>)
+</script>

@@ -1,5 +1,5 @@
 class CallLog
-  include LogParseHelper
+  require 'json'
   include Mongoid::Document
 
   field :id,        type: String
@@ -30,7 +30,7 @@ class CallLog
   def event_array
     event_array = []
     self.call_events.all.to_a.each do |event|
-      event_array += [event.message.to_json.gsub('=', ':').delete("\\")]
+      event_array += [event.message.to_json.gsub('=', ':')]
     end
     event_array.to_a
   end
