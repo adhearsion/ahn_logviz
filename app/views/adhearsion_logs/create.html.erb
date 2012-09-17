@@ -1,4 +1,5 @@
 <%= form_tag({:action => :parse}, :multipart => true) do %>
+  <%= text_area 'pasted_text', nil, {size: "50x25", escaped: false} %>
   <%= file_field_tag 'log_file' %>
-  <%= submit_tag("Upload") %>
+  <%= submit_tag("Submit") %>
 <% end %>
