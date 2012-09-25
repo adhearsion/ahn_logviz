@@ -1,5 +1,14 @@
-<%= form_tag({:action => :parse}, :multipart => true) do %>
-  <%= text_area 'pasted_text', nil, {size: "50x25", escaped: false} %>
-  <%= file_field_tag 'log_file' %>
-  <%= submit_tag("Submit") %>
-<% end %>
+<div id='bodyDiv'>
+<div id='topBanner'>
+  <h2>Adhearsion Log Vizualizer</h2>
+</div>
+<div id='formDiv'>
+  <%= form_tag({:action => :parse}, :multipart => true) do %>
+    <%= text_area 'pasted_text', nil, {size: "50x25", escaped: false} %>
+    <br />
+    <%= file_field_tag 'log_file' %>
+    <br />
+    <%= submit_tag("Submit") %>
+  <% end %>
+</div>
+</div>
