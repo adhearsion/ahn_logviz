@@ -124,6 +124,15 @@ class LogParser
         message_data = [{from: message[:message].split("Conference\"=>\"")[1].split("\"")[0], 
                          to: extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0]), 
                          event: "Unjoined"}]
+      when /DTMF/
+        if message[:message] =~ /\"End\"=>\"Yes\"/
+          channel = extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0])
+          input = message[:message].split("Digit\"=>\"")[1].split("\"")[0]
+          message_data = [{from: 'adhearsion', to: channel, event: "Input"}]
+          message_data += [{from: channel, to: 'adhearsion', event: "\"#{input}\""}]
+        else
+          message_data = nil
+        end
       else
         message_data = nil
       end
