@@ -7,6 +7,9 @@ class LogParser
     @log = log
     @ahn_log = ahn_log
     @stored_line = ""
+    @line_number = 1
+    @start_line = 0
+    @end_line = 0
   end
 
   def run
@@ -40,12 +43,16 @@ class LogParser
   def read_next_message(line = "")
     until trace_message? line do
       line = @log.readline
+      @line_number += 1
     end
+    @start_line = @line_number - 1
     message = line
     line = ""
     until timestamped? line do
       line = @log.readline
+      @line_number += 1
       if timestamped? line
+        @end_line = @line_number - 1
         @stored_line = line
       else
         message += line
@@ -57,6 +64,8 @@ class LogParser
   def get_event(message)
     message_data = []
     case message[:message]
+    when /ERROR/
+      message_data = [{from: 'adhearsion', to: 'adhearsion', event: 'Error'}]
     when /RECEIVING \(presence\)/
       call_id = extract_call_id_from_address message[:message].split(" ")[7].delete("\"").gsub("from=", '').delete("-")
       case message[:message]
@@ -151,6 +160,7 @@ class LogParser
     end
     unless message_data.nil?
       message_data.each do |m|
+        m[:log] = message[:message]
         m[:time] = message[:time]
       end
     end
@@ -166,7 +176,7 @@ class LogParser
           next_event = get_next_event
         end
         event[0][:to] = next_event[0][:to]
-        event += [{from: next_event[0][:to], to: next_event[0][:from], event: next_event[0][:event], time: event[0][:time]}]
+        event += [{from: next_event[0][:to], to: next_event[0][:from], event: next_event[0][:event], time: event[0][:time], log: next_event[0][:log]}]
       end
       event
     else
@@ -178,7 +188,7 @@ class LogParser
     event.each do |e|
       new_call_ref e[:from] unless @call_log.calls[e[:from]]
       new_call_ref e[:to] unless @call_log.calls[e[:to]]
-      @call_log.call_events << CallEvent.new(time: e[:time], message: {from: e[:from], to: e[:to], event: e[:event]})
+      @call_log.call_events << CallEvent.new(time: e[:time], message: {from: e[:from], to: e[:to], event: e[:event] + " (#{@start_line})"}, log: e[:log])
     end
   end
 
@@ -187,7 +197,7 @@ class LogParser
   end
 
   def trace_message?(message)
-    (message =~ /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] TRACE/) == 0
+    (message =~ /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] TRACE/) == 0 || (message =~ /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] ERROR/) == 0
   end
 
   def get_next_event

@@ -30,7 +30,7 @@ class CallLog
   def event_array
     event_array = []
     self.call_events.all.to_a.each do |event|
-      event_array += [event.message.to_json.gsub('=', ':')]
+      event_array += [event.to_json.gsub('=', ':')]
     end
     event_array.to_a
   end

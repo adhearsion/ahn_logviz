@@ -1,4 +1,5 @@
-<canvas id='drawingCanvas'></canvas>
+
+<canvas id='drawingCanvas' width="800" height="800" style="position: absolute; z-index: 0"></canvas>
 <script type="text/javascript">
   drawChart(<%= raw @call_log.event_array %>, <%= raw @call_log.call_array %>)
 </script>

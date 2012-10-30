@@ -1,11 +1,12 @@
+var currentEvent;
 function create_call_array(call_names)
 {
   var call_array = [];
-  var current_x = 75;
+  var current_x = 60;
   for(i=0; i < call_names.length; i++)
   {
     call_array[i] = [call_names[i], current_x];
-    current_x += 160;
+    current_x += 127;
   }
   return call_array;
 }
@@ -22,14 +23,15 @@ function create_events_array(events)
 function arrowToSelf(x,y)
 {
   $("canvas").drawLine({
+    layer: true,
     strokeStyle: "#000",
     strokeWidth: 1,
     rounded: true,
     x1: x, y1: y,
     x2: x+50, y2: y,
-    x3: x+50, y3: y+20
+    x3: x+50, y3: y+15
   });
-  drawArrow(x+50, y+20, x, y+20);
+  drawArrow(x+50, y+15, x, y+15);
 }
 
 function drawArrow(from_x, from_y, to_x, to_y)
@@ -37,6 +39,7 @@ function drawArrow(from_x, from_y, to_x, to_y)
   var head = 10;
   var angle = Math.atan2(to_y-from_y, to_x-from_x);
   $("canvas").drawLine({
+    layer: true,
     strokeStyle: "#000",
     strokeWidth: 1,
     x1: from_x, y1: from_y,
@@ -44,6 +47,7 @@ function drawArrow(from_x, from_y, to_x, to_y)
     x3: to_x-head*Math.cos(angle-Math.PI/6),
     y3: to_y-head*Math.sin(angle-Math.PI/6)
   }).drawLine({
+    layer: true,
     x1: to_x, y1: to_y,
     x2: to_x-head*Math.cos(angle+Math.PI/6),
     y2: to_y-head*Math.sin(angle+Math.PI/6)
@@ -62,40 +66,45 @@ function createEntityGradient(x,y)
 }
 
 function drawEntities(call_array) {
-  var lower_y = parseInt(document.getElementById('drawingCanvas').height) - 50;
+  var lower_y = parseInt(document.getElementById('drawingCanvas').height) - 25;
   for(i=0; i < call_array.length; i++)
   {
     $("canvas").drawRect({
-      fillStyle: createEntityGradient(i*160,0),
-      x: i*160, y: 0,
-      width: 150, height: 50,
+      layer: true,
+      fillStyle: createEntityGradient(i*105,0),
+      x: i*127, y: 0,
+      width: 120, height: 30,
       fromCenter: false,
       cornerRadius: 10
     }).drawRect({
-      fillStyle: createEntityGradient(i*160,lower_y),
-      x: i*160, y: lower_y,
-      width: 150, height: 50,
+      layer: true,
+      fillStyle: createEntityGradient(i*105,lower_y),
+      x: i*127, y: lower_y,
+      width: 120, height: 30,
       fromCenter: false,
       cornerRadius: 10
     });
     $("canvas").drawText({
-      x: i*160 + 75, y: 25,
+      layer: true,
+      x: i*127 + 60, y: 15,
       fillStyle: "#000",
-      font: "18px Arial",
+      font: "12px Arial",
       fromCenter: true,
-      maxWidth: 125,
+      maxWidth: 100,
       text: call_array[i][0][1]
     }).drawText({
-      x: i*160 + 75, y: lower_y + 25,
+      layer: true,
+      x: i*127+60, y: lower_y + 15,
       fillStyle: "#000",
-      font: "18px Arial",
+      font: "12px Arial",
       fromCenter: true,
-      maxWidth: 125,
+      maxWidth: 100,
       text: call_array[i][0][1]
     });
     $("canvas").drawLine({
-      x1: i*160 + 75, y1: 50,
-      x2: i*160 + 75, y2: lower_y,
+      layer: true,
+      x1: i*127+60, y1: 30,
+      x2: i*127+60, y2: lower_y,
       strokeStyle: "#000",
       strokeWidth: 1
     });
@@ -104,47 +113,112 @@ function drawEntities(call_array) {
 
 function drawEvents(call_array, events_array)
 {
-  var current_y = 100;
+  var current_y = 60;
   for(i=0; i < events_array.length; i++)
   {
+    currentEvent = i;
     var from = 0;
     var to = 0;
     for(j=0; j < call_array.length; j++)
     {
-      if(events_array[i].to.valueOf() == call_array[j][0][0].valueOf())
+      if(events_array[i].message.to.valueOf() == call_array[j][0][0].valueOf())
       {
         to = call_array[j][1];
       }
-      if(events_array[i].from.valueOf() == call_array[j][0][0].valueOf())
+      if(events_array[i].message.from.valueOf() == call_array[j][0][0].valueOf())
       {
         from = call_array[j][1];
       }
     }
 
+    $("body").append("<div id='event_" + i.toString() + "' style='display: none; position: absolute;'></div>");
+    $("#event_" + i.toString()).text(events_array[i].log).html();
+    $("#event_" + i.toString()).click(function() {
+      $(this).hide(400);
+    });
+    $("#event_" + i.toString()).mouseover(function() {
+      $(this).css({cursor: "pointer"});
+    });
+    $("#event_" + i.toString()).mouseout(function() {
+      $(this).css({cursor: "default"});
+    });
+
     if(to == from)
     {
       arrowToSelf(from, current_y);
-      $("canvas").drawText({
+      $("canvas").drawRect({
+        layer: true,
+        name: "event_rect_" + currentEvent.toString(),
         x: from + 55, y: current_y,
         fromCenter: false,
-        font: "14px Arial",
+        fillStyle: "#FFF",
+        width: $("canvas").measureText({ font: "11px Arial", text: events_array[i].message.event}).width,
+        height: 11
+      }).drawText({
+        layer: true,
+        x: from + 55, y: current_y,
+        fromCenter: false,
+        font: "11px Arial",
         fillStyle: "#000",
-        text: events_array[i].event
-        //onclick: displayEventInfo(events_array[i])
-      });
-      current_y += 70;
-    } else {
-      drawArrow(from, current_y, to, current_y);
-      var midpt = from + (Math.abs(to - from) / 2);
-      $("canvas").drawText({
-        x: midpt, y: current_y - 15,
-        fromCenter: true,
-        font: "14px Arial",
-        fillStyle: "#000",
-        text: events_array[i].event
-        //onclick: displayEventInfo(events_array[i])
+        text: events_array[i].message.event,
+        name: "event_" + currentEvent.toString(),
+        mouseover: function() {
+          $(this).css({cursor: "pointer"});  
+        },
+        mouseout: function() {
+          $(this).css({cursor: "default"});  
+        },
+        click: function(layer) {
+          $("#" + layer.name).css("left", (layer.x + 10).toString() + "px");
+          $("#" + layer.name).css("top", (layer.y + 10).toString() + "px");
+          $("#" + layer.name).css("width", "500px");
+          $("#" + layer.name).css("font", "10px Arial");
+          $("#" + layer.name).css("background-color", "#FFFFFF");
+          $("#" + layer.name).css("border", "1px solid black");
+          $("#" + layer.name).show(400);
+        }
       });
       current_y += 50;
+    } else {
+      drawArrow(from, current_y, to, current_y);
+      if(to > from) {
+        var midpt = from + (Math.abs(to - from) / 2);
+      } else {
+        var midpt = to + (Math.abs(to - from) / 2);
+      }
+      $("canvas").drawRect({
+        layer: true,
+        name: "event_rect_" + currentEvent.toString(),
+        x: midpt, y: current_y - 15,
+        fromCenter: true,
+        fillStyle: "#FFF",
+        width: $("canvas").measureText({ font: "11px Arial", text: events_array[i].message.event}).width,
+        height: 11
+      }).drawText({
+        layer: true,
+        x: midpt, y: current_y - 15,
+        fromCenter: true,
+        font: "11px Arial",
+        fillStyle: "#000",
+        text: events_array[i].message.event,
+        name: "event_" + currentEvent.toString(),
+        mouseover: function() {
+          $(this).css({cursor: "pointer"});  
+        },
+        mouseout: function() {
+          $(this).css({cursor: "default"});  
+        },
+        click: function(layer) {
+          $("#" + layer.name).css("left", (layer.x + 10).toString() + "px");
+          $("#" + layer.name).css("top", (layer.y + 10).toString() + "px");
+          $("#" + layer.name).css("width", "500px");
+          $("#" + layer.name).css("font", "10px Arial");
+          $("#" + layer.name).css("background-color", "#FFFFFF");
+          $("#" + layer.name).css("border", "1px solid black");
+          $("#" + layer.name).show(400);
+        }
+      });
+      current_y += 30;
     }
   }
 }
@@ -154,8 +228,9 @@ function drawChart(events, call_names)
   call_array = create_call_array(call_names);
   events_array = create_events_array(events);
   var canvas = document.getElementById('drawingCanvas');
-  canvas.height = (events.length * 60 + 150).toString();
-  canvas.width = (call_names.length * 160 + 50).toString();
+  canvas.height = (events.length * 40 + 150).toString();
+  canvas.width = (call_names.length * 127 + 100).toString();
   drawEntities(call_array);
   drawEvents(call_array, events_array);
+  $("canvas").drawLayers();
 }
