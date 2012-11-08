@@ -16,7 +16,7 @@ class AdhearsionLogsController < ApplicationController
         file.write line + "\n"
       end
     else
-      render text: "Error! No Log File submitted!"
+      render :text => "Error! No Log File submitted!"
       redirect_to :create
     end
     @ahn_log[:log_url] = Rails.root.join 'public', 'uploads', "log#{AdhearsionLog.count + 1}.log"

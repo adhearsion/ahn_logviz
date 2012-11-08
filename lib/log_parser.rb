@@ -28,7 +28,7 @@ class LogParser
   def read_call
     first_event = get_next_event
     @main_calls = [first_event[0][:from]]
-    @call_log = CallLog.new(id: @main_calls[0], calls: {'adhearsion' => "Adhearsion"})
+    @call_log = CallLog.new(:id => @main_calls[0], :calls => {'adhearsion' => "Adhearsion"})
     @ahn_log.call_logs << @call_log
     @call_log.save
     create_call_event find_dial(first_event)
@@ -58,24 +58,24 @@ class LogParser
         message += line
       end
     end
-    { message: message, time: DateTime.strptime(message.split("]")[0].delete("["), "%Y-%m-%d %H:%M:%S") }
+    { :message => message, :time => DateTime.strptime(message.split("]")[0].delete("["), "%Y-%m-%d %H:%M:%S") }
   end
 
   def get_event(message)
     message_data = []
     case message[:message]
     when /ERROR/
-      message_data = [{from: 'adhearsion', to: 'adhearsion', event: 'Error'}]
+      message_data = [{:from => 'adhearsion', :to => 'adhearsion', :event => 'Error'}]
     when /RECEIVING \(presence\)/
       call_id = extract_call_id_from_address message[:message].split(" ")[7].delete("\"").gsub("from=", '').delete("-")
       case message[:message]
       when /offer/
-        message_data = [{from: call_id, to: nil, event: "Dial"}]
+        message_data = [{:from => call_id, :to => nil, :event => "Dial"}]
       when /ringing/
-        message_data = [{from: call_id, to: call_id, event: "Ringing"}]
+        message_data = [{:from => call_id, :to => call_id, :event => "Ringing"}]
         @main_calls += [call_id]
       when /answered/
-        message_data = [{from: call_id, to: call_id, event: "Answered"}]
+        message_data = [{:from => call_id, :to => call_id, :event => "Answered"}]
       when /[^u][^n]joined/
         from = [call_id, message[:message].split("<joined ")[1].split(" ")[1].split("\"/>")[0].gsub("call-id=\"", '').gsub("-", '')]
         to = nil
@@ -84,7 +84,7 @@ class LogParser
 
         if to
           from.each do |f|
-            message_data += [{from: f, to: to, event: event}]
+            message_data += [{:from => f, :to => to, :event => event}]
           end
         else
           message_data = nil
@@ -96,14 +96,14 @@ class LogParser
 
         if from
           to.each do |t|
-            message_data += [{from: from, to: t, event: event}]
+            message_data += [{:from => from, :to => t, :event => event}]
           end
           remove_joined_call to
         else
           message_data = nil
         end
       when /hangup/
-        message_data = [{from: call_id, to: call_id, event: "Hangup"}]
+        message_data = [{:from => call_id, :to => call_id, :event => "Hangup"}]
       else
         message_data = nil
       end
@@ -113,9 +113,9 @@ class LogParser
         channel = extract_channel_id_from_address message[:message].split("Channel\"=>\"")[1].split("\"")[0]
         case message[:message]
         when /Ring/
-          message_data = [{from: channel, to: channel, event: "Ringing"}]
+          message_data = [{:from => channel, :to => channel, :event => "Ringing"}]
         when /\"ChannelStateDesc\"=>\"Up\"/
-          message_data = [{from: channel, to: channel, event: "Answered"}]
+          message_data = [{:from => channel, :to => channel, :event => "Answered"}]
         else
           message_data = nil
         end
@@ -127,18 +127,18 @@ class LogParser
         end
         from = extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0])
 
-        message_data = [{from: from, to: to, event: "Joined"}]
+        message_data = [{:from => from, :to => to, :event => "Joined"}]
         @main_calls += [from]
       when /ConfbridgeLeave/
-        message_data = [{from: message[:message].split("Conference\"=>\"")[1].split("\"")[0], 
-                         to: extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0]), 
-                         event: "Unjoined"}]
+        message_data = [{:from => message[:message].split("Conference\"=>\"")[1].split("\"")[0], 
+                         :to => extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0]), 
+                         :event => "Unjoined"}]
       when /DTMF/
         if message[:message] =~ /\"End\"=>\"Yes\"/
           channel = extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0])
           input = message[:message].split("Digit\"=>\"")[1].split("\"")[0]
-          message_data = [{from: 'adhearsion', to: channel, event: "Input"}]
-          message_data += [{from: channel, to: 'adhearsion', event: "\"#{input}\""}]
+          message_data = [{:from => 'adhearsion', :to => channel, :event => "Input"}]
+          message_data += [{:from => channel, :to => 'adhearsion', :event => "\"#{input}\""}]
         else
           message_data = nil
         end
@@ -149,9 +149,9 @@ class LogParser
       case message[:message]
       when /hangup/
         channel = extract_channel_id_from_address message[:message].split("Channel: ")[1].strip
-        message_data = [{from: channel, to: channel, event: "Hangup"}]
+        message_data = [{:from => channel, :to => channel, :event => "Hangup"}]
       when /originate/
-        message_data = [{from: @main_calls.last, to: nil, event: "Dial"}]
+        message_data = [{:from => @main_calls.last, :to => nil, :event => "Dial"}]
       else
         message_data = nil
       end
@@ -176,7 +176,7 @@ class LogParser
           next_event = get_next_event
         end
         event[0][:to] = next_event[0][:to]
-        event += [{from: next_event[0][:to], to: next_event[0][:from], event: next_event[0][:event], time: event[0][:time], log: next_event[0][:log]}]
+        event += [{:from => next_event[0][:to], :to => next_event[0][:from], :event => next_event[0][:event], :time => event[0][:time], :log => next_event[0][:log]}]
       end
       event
     else
@@ -188,7 +188,7 @@ class LogParser
     event.each do |e|
       new_call_ref e[:from] unless @call_log.calls[e[:from]]
       new_call_ref e[:to] unless @call_log.calls[e[:to]]
-      @call_log.call_events << CallEvent.new(time: e[:time], message: {from: e[:from], to: e[:to], event: e[:event] + " (#{@start_line})"}, log: e[:log])
+      @call_log.call_events << CallEvent.new(:time => e[:time], :message => {:from => e[:from], :to => e[:to], :event => e[:event] + " (#{@start_line})"}, :log => e[:log])
     end
   end
 
@@ -233,7 +233,7 @@ class LogParser
 
   def new_joined_call(calls)
     @call_log.calls["jc#{@joined_calls.length}"] = "Bridge#{@joined_calls.length + 1}"
-    @joined_calls += [{joined_call: @call_log.calls.keys.last, calls: calls}]
+    @joined_calls += [{:joined_call => @call_log.calls.keys.last, :calls => calls}]
     @joined_calls.last[:joined_call]
   end
 

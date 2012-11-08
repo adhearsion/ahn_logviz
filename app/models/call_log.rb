@@ -2,9 +2,9 @@ class CallLog
   require 'json'
   include Mongoid::Document
 
-  field :id,        type: String
-  field :post_data, type: String
-  field :calls,     type: Hash
+  field :id,        :type => String
+  field :post_data, :type => String
+  field :calls,     :type => Hash
 
   embeds_many :call_events
   belongs_to  :adhearsion_log
