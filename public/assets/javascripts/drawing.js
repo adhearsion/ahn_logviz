@@ -59,8 +59,8 @@ function createEntityGradient(x,y)
   var linear = $("canvas").createGradient({
     x1: x, y1: y,
     x2: x, y2: y+50,
-    c1: "#00ABEB",
-    c2: "#FFF"
+    c1: "#333",
+    c2: "#aaa"
   });
   return linear;
 }
@@ -87,7 +87,7 @@ function drawEntities(call_array) {
     $("canvas").drawText({
       layer: true,
       x: i*127 + 60, y: 15,
-      fillStyle: "#000",
+      fillStyle: "#FFF",
       font: "12px Arial",
       fromCenter: true,
       maxWidth: 100,
@@ -95,7 +95,7 @@ function drawEntities(call_array) {
     }).drawText({
       layer: true,
       x: i*127+60, y: lower_y + 15,
-      fillStyle: "#000",
+      fillStyle: "#FFF",
       font: "12px Arial",
       fromCenter: true,
       maxWidth: 100,
@@ -133,6 +133,7 @@ function drawEvents(call_array, events_array)
 
     $("body").append("<div id='event_" + i.toString() + "' style='display: none; position: absolute;'></div>");
     $("#event_" + i.toString()).text(events_array[i].log).html();
+    $("#event_" + i.toString()).addClass('ui-corner-all')
     $("#event_" + i.toString()).click(function() {
       $(this).hide(400);
     });
@@ -151,7 +152,7 @@ function drawEvents(call_array, events_array)
         name: "event_rect_" + currentEvent.toString(),
         x: from + 55, y: current_y,
         fromCenter: false,
-        fillStyle: "#FFF",
+        fillStyle: "#7DE",
         width: $("canvas").measureText({ font: "11px Arial", text: events_array[i].message.event}).width,
         height: 11
       }).drawText({
@@ -169,8 +170,8 @@ function drawEvents(call_array, events_array)
           $(this).css({cursor: "default"});  
         },
         click: function(layer) {
-          $("#" + layer.name).css("left", (layer.x + 10).toString() + "px");
-          $("#" + layer.name).css("top", (layer.y + 10).toString() + "px");
+          $("#" + layer.name).css("left", ($("canvas").offset().left + layer.x).toString() + "px");
+          $("#" + layer.name).css("top", ($("canvas").offset().top + layer.y).toString() + "px");
           $("#" + layer.name).css("width", "500px");
           $("#" + layer.name).css("font", "10px Arial");
           $("#" + layer.name).css("background-color", "#FFFFFF");
@@ -191,7 +192,7 @@ function drawEvents(call_array, events_array)
         name: "event_rect_" + currentEvent.toString(),
         x: midpt, y: current_y - 15,
         fromCenter: true,
-        fillStyle: "#FFF",
+        fillStyle: "#7DE",
         width: $("canvas").measureText({ font: "11px Arial", text: events_array[i].message.event}).width,
         height: 11
       }).drawText({
@@ -209,8 +210,8 @@ function drawEvents(call_array, events_array)
           $(this).css({cursor: "default"});  
         },
         click: function(layer) {
-          $("#" + layer.name).css("left", (layer.x + 10).toString() + "px");
-          $("#" + layer.name).css("top", (layer.y + 10).toString() + "px");
+          $("#" + layer.name).css("left", ($("canvas").offset().left + layer.x).toString() + "px");
+          $("#" + layer.name).css("top", ($("canvas").offset().top + layer.y).toString() + "px");
           $("#" + layer.name).css("width", "500px");
           $("#" + layer.name).css("font", "10px Arial");
           $("#" + layer.name).css("background-color", "#FFFFFF");
@@ -229,8 +230,11 @@ function drawChart(events, call_names)
   events_array = create_events_array(events);
   var canvas = document.getElementById('drawingCanvas');
   canvas.height = (events.length * 40 + 150).toString();
-  canvas.width = (call_names.length * 127 + 100).toString();
+  canvas.width = (call_names.length * 127 + 50).toString();
+  $("#content").width(canvas.width);
+  $("#contentBody").height(canvas.height);
   drawEntities(call_array);
   drawEvents(call_array, events_array);
   $("canvas").drawLayers();
+  $("#contentBody").css("overflow", "auto");
 }

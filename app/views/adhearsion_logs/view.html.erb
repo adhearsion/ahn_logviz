@@ -1,12 +1,14 @@
-<html>
-<head>
-  <title>Adhearsion log <%= @ahn_log.id.to_s %></title>
-</head>
-<body>
-  <ol>
+<script>
+  $("#contentBody").css("text-align", "center");
+  $(document).tooltip();
+</script>
+<% content_for :content_header do %>
+  List of Call Logs
+<% end %>
+<% content_for :content_body do %>
+  <ul style='list-style-type: none; margin: 3px; padding: 15px;'>
     <% @ahn_log.call_logs.each do |log| %>
-     <li> <%= link_to log.id.to_s, "/call_logs/view/#{log.id}" %> Start Time: <%= log.start_time.to_s %>, End Time: <%= log.end_time.to_s %></li>
+      <li> <a href="/call_logs/view/<%= log.id %>" title="Start Time: <%= log.start_time.strftime '%m/%d/%Y at %I:%M:%S %p' %><br>End Time: <%= log.end_time.strftime '%m/%d/%Y at %I:%M:%S %p' %>"><%= log.id.to_s %></a></li>
     <% end %>
-  </ol>
-</body>
-</html>
+  </ul>
+<% end %>

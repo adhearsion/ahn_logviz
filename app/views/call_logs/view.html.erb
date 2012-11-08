@@ -1,5 +1,12 @@
+<% content_for :content_header do %>
+  Call Log: <%= @call_log.id %>
+<% end %>
+<% content_for :content_body do %>
 
-<canvas id='drawingCanvas' width="800" height="800" style="position: absolute; z-index: 0"></canvas>
-<script type="text/javascript">
-  drawChart(<%= raw @call_log.event_array %>, <%= raw @call_log.call_array %>)
-</script>
+  <canvas id='drawingCanvas' width="800" height="800" style="position: absolute; z-index: 0"></canvas>
+  <div style="clear: both"></div>
+  <script type="text/javascript">
+    $("#contentBody").css("overflow", "auto")
+    drawChart(<%= raw @call_log.event_array %>, <%= raw @call_log.call_array %>)
+  </script>
+<% end %> 

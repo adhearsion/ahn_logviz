@@ -1,14 +1,24 @@
-<div id='bodyDiv'>
-<div id='topBanner'>
-  <h2>Adhearsion Log Vizualizer</h2>
-</div>
-<div id='formDiv'>
+<script>
+$(function() {
+  $( "input[type=submit], a, button" ).button();
+  $("#createAccordion").accordion();
+});
+</script>
+<% content_for :content_header do %>
+  Welcome to Adhearsion LogViz!
+<% end %>
+<% content_for :content_body do %>
   <%= form_tag({:action => :parse}, :multipart => true) do %>
-    <%= text_area 'pasted_text', nil, {size: "50x25", escaped: false} %>
-    <br />
-    <%= file_field_tag 'log_file' %>
-    <br />
+    <div id='createAccordion'>
+      <h3>Copy And Paste Logs</h3>
+      <div>
+        <%= text_area 'pasted_text', nil, {size: "50x10", escaped: false} %>
+      </div>
+      <h3>Upload a File</h3>
+      <div height='100px'>
+        <%= file_field_tag 'log_file' %>
+      </div>
+    </div>
     <%= submit_tag("Submit") %>
   <% end %>
-</div>
-</div>
+<% end %>
