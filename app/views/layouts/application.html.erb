@@ -2,12 +2,12 @@
 <html>
 <head>
   <title>AhnLogviz</title>
-  <%= stylesheet_link_tag    "stylesheets/logviz-jquery.css" %>
-  <%= stylesheet_link_tag    "application" %>
-  <%= javascript_include_tag "javascripts/jquery-1.8.2.min.js" %>
+  <%= stylesheet_link_tag    "/assets/stylesheets/logviz-jquery.css" %>
+  <%= stylesheet_link_tag    "/assets/stylesheets/logviz.css" %>
+  <%= javascript_include_tag "/assets/javascripts/jquery-1.8.2.min.js" %>
   <%= javascript_include_tag "http://code.jquery.com/ui/1.9.1/jquery-ui.js" %>
-  <%= javascript_include_tag "javascripts/drawing.js" %>
-  <%= javascript_include_tag "javascripts/jcanvas.min.js" %>
+  <%= javascript_include_tag "/assets/javascripts/drawing.js" %>
+  <%= javascript_include_tag "/assets/javascripts/jcanvas.min.js" %>
   <%= csrf_meta_tags %>
   <%= yield :head %>
 </head>
