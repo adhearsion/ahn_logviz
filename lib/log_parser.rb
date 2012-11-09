@@ -8,6 +8,7 @@ class LogParser
     @ahn_log = ahn_log
     @stored_line = ""
     @line_number = 1
+    @call_log = CallLog.new
     @start_line = 0
     @end_line = 0
   end
@@ -67,13 +68,13 @@ class LogParser
     when /ERROR/
       message_data = [{:from => 'adhearsion', :to => 'adhearsion', :event => 'Error'}]
     when /RECEIVING \(presence\)/
-      call_id = extract_call_id_from_address message[:message].split(" ")[7].delete("\"").gsub("from=", '').delete("-")
+      call_id = extract_call_id_from_address message[:message].split("from=\"")[1].split("\"")[0].delete("-")
       case message[:message]
       when /offer/
         message_data = [{:from => call_id, :to => nil, :event => "Dial"}]
       when /ringing/
         message_data = [{:from => call_id, :to => call_id, :event => "Ringing"}]
-        @main_calls += [call_id]
+        @main_calls += [call_id] if @main_calls
       when /answered/
         message_data = [{:from => call_id, :to => call_id, :event => "Answered"}]
       when /[^u][^n]joined/
@@ -128,7 +129,7 @@ class LogParser
         from = extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0])
 
         message_data = [{:from => from, :to => to, :event => "Joined"}]
-        @main_calls += [from]
+        @main_calls += [from] if @main_calls
       when /ConfbridgeLeave/
         message_data = [{:from => message[:message].split("Conference\"=>\"")[1].split("\"")[0], 
                          :to => extract_channel_id_from_address(message[:message].split("Channel\"=>\"")[1].split("\"")[0]), 
