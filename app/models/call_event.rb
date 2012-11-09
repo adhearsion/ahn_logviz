@@ -6,7 +6,7 @@ class CallEvent
   field :log,         :type => String
   field :line_number, :type => Integer
 
-  store_in :call_log
+  embedded_in :call_log
   accepts_nested_attributes_for :call_log
   validates_presence_of :message
 end
