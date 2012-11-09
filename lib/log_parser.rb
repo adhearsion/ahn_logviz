@@ -6,6 +6,7 @@ class LogParser
   def initialize(log, ahn_log)
     @log = log
     @ahn_log = ahn_log
+    @call_log = CallLog.new()
     @stored_line = ""
     @line_number = 1
     @start_line = 0
@@ -28,7 +29,7 @@ class LogParser
   def read_call
     first_event = get_next_event
     @main_calls = [first_event[0][:from]]
-    @call_log = CallLog.new(:id => @main_calls[0], :calls => {'adhearsion' => "Adhearsion"})
+    @call_log = CallLog.new(:calls => {'adhearsion' => "Adhearsion"})
     @ahn_log.call_logs << @call_log
     @call_log.save
     create_call_event find_dial(first_event)
