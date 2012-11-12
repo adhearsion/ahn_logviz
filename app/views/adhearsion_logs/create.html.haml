@@ -1,0 +1,19 @@
+:javascript
+  $(function() {
+    $( "input[type=submit], button" ).button();
+    $("#createAccordion").accordion();
+  });
+
+- content_for :content_header do
+  Welcome to Adhearsion Log Visualizer!
+
+- content_for :content_body do
+  = form_tag({:action => :parse}, :multipart => true) do
+    #createAccordion
+      %h3 Copy And Paste Logs
+      .ui-widget-content
+        = text_area 'pasted_text', nil, {size: "50x10", escaped: false}
+      %h3 Upload a File
+      .ui-widget-content
+        = file_field_tag 'log_file'
+    = submit_tag "Submit"

@@ -1,0 +1,12 @@
+- content_for :content_header do
+  = "Call Log: #{@call_log.id.to_s}"
+
+- content_for :content_body do
+
+  %canvas{ :id => 'drawingCanvas' :width => "800" :height => "800" :style => "position: absolute; z-index: 0" }
+    We're sorry, but your browser does not support canvas.
+  %div{:style => "clear: both"}
+  :javascript
+    $("#contentBody").css("overflow", "auto")
+    drawChart("#{raw @call_log.event_array}", "#{raw @call_log.call_array}")
+
