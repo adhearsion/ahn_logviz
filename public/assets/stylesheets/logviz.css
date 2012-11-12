@@ -26,13 +26,23 @@ body {
   margin: auto;
   display: block;
   text-align: center;
-  top: 50px;
+  top: 60px;
 }
 #contentHeader {
   padding: 10px;
 }
 #contentBody {
   padding: 20px;
+}
+
+#flash {
+  position: absolute;
+  top: 30px;
+  left: 0px;
+  width: 100%;
+  height: 1.1em;
+  text-align: center;
+  display: none;
 }
 
 .shadow {

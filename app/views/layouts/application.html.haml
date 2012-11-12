@@ -7,6 +7,7 @@
     = javascript_include_tag "http://code.jquery.com/ui/1.9.1/jquery-ui.js"
     = javascript_include_tag "/assets/javascripts/drawing.js"
     = javascript_include_tag "/assets/javascripts/jcanvas.min.js"
+    = javascript_include_tag "/assets/javascripts/flash.js"
     = csrf_meta_tags
     = yield :head
 
@@ -14,7 +15,13 @@
     #topBar.ui-widget-header
       %a{ :href => "/" }
         %img{ :src => "/assets/images/logo.png" }
-    #flash.hidden
+    #flash.ui-state-error.ui-widget
+      - if flash[:notice]
+        :javascript
+          showFlash("#{flash[:notice]}");
+      - else
+        :javascript
+          hideFlash();
     #content.shadow
       #contentHeader.ui-widget-header.ui-widget.ui-corner-top
         = yield :content_header

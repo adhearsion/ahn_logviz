@@ -1,11 +1,11 @@
 require 'fileutils'
-require 'haml'
 require Rails.root.join("lib", "log_parser.rb")
 class AdhearsionLogsController < ApplicationController
 
   rescue_from NoMethodError, :with => :bad_log
 
   def bad_log
+    flash[:notice] = "Upload a real log next time. Tip: TRACE logs are the only kind that work here."
     redirect_to "/"
   end
 
@@ -22,8 +22,6 @@ class AdhearsionLogsController < ApplicationController
       params[:pasted_text].each do |text|
         file.write text.gsub("\r\n", "\n")
       end
-    else
-      redirect_to "/"
     end
     @ahn_log[:log_url] = Rails.root.join 'public', 'uploads', "log#{AdhearsionLog.count + 1}.log"
     LogParser.new(File.open(@ahn_log.log_url, 'r'), @ahn_log).run
@@ -31,6 +29,7 @@ class AdhearsionLogsController < ApplicationController
     if @ahn_log.call_logs
       render "view"
     else
+      flash[:notice] = "Upload a real log next time. Tip: TRACE logs are the only kind that work here."
       redirect_to "/"
     end
   end
