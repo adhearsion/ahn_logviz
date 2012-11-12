@@ -2,6 +2,12 @@ require 'fileutils'
 require Rails.root.join("lib", "log_parser.rb")
 class AdhearsionLogsController < ApplicationController
 
+  rescue_from NoMethodError, :with => :bad_log
+
+  def bad_log
+    redirect_to :create
+  end
+
   def create
   end
 
@@ -12,8 +18,8 @@ class AdhearsionLogsController < ApplicationController
       uploaded_file = File.open(params[:log_file].path)
       FileUtils.cp(uploaded_file, file)
     elsif params[:pasted_text]
-      params[:pasted_text].each do |line|
-        file.write line + "\n"
+      params[:pasted_text].each do |text|
+        file.write text.gsub("\r\n", "\n")
       end
     else
       render :text => "Error! No Log File submitted!"
