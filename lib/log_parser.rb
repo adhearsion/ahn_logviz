@@ -8,7 +8,6 @@ class LogParser
     @ahn_log = ahn_log
     @stored_line = ""
     @line_number = 1
-    @call_log = CallLog.new
     @start_line = 0
     @end_line = 0
   end
