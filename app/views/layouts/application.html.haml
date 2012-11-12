@@ -15,6 +15,7 @@
     #topBar.ui-widget-header
       %a{ :href => "/" }
         %img{ :src => "/assets/images/logo.png" }
+      = yield :top_bar
     #flash.ui-state-error.ui-widget
       - if flash[:notice]
         :javascript

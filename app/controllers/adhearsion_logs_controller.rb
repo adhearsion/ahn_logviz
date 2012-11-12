@@ -23,8 +23,8 @@ class AdhearsionLogsController < ApplicationController
         file.write text.gsub("\r\n", "\n")
       end
     end
-    @ahn_log[:log_url] = Rails.root.join 'public', 'uploads', "log#{AdhearsionLog.count + 1}.log"
-    LogParser.new(File.open(@ahn_log.log_url, 'r'), @ahn_log).run
+    @ahn_log[:log_url] = "/uploads/log#{AdhearsionLog.count + 1}.log"
+    LogParser.new(File.open(file.path, 'r'), @ahn_log).run
     @ahn_log.save
     if @ahn_log.call_logs
       render "view"
