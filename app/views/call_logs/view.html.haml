@@ -8,5 +8,5 @@
   %div{:style => "clear: both"}
   :javascript
     $("#contentBody").css("overflow", "auto")
-    drawChart("#{raw @call_log.event_array}", "#{raw @call_log.call_array}")
+    drawChart(#{@call_log.event_array}, #{@call_log.call_array})
 
