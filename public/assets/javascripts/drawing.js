@@ -233,8 +233,10 @@ function drawChart(events, call_names)
   canvas.width = (call_names.length * 127 + 50).toString();
   $("#content").width(canvas.width);
   $("#contentBody").height(canvas.height);
+  if($.browser.mozilla) {
+    $("canvas").css("left", "20px")
+  }
   drawEntities(call_array);
   drawEvents(call_array, events_array);
   $("canvas").drawLayers();
-  $("#contentBody").css("overflow", "auto");
 }

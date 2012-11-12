@@ -25,6 +25,6 @@
     #content.shadow
       #contentHeader.ui-widget-header.ui-widget.ui-corner-top
         = yield :content_header
-      #contentBody.ui-corner-bottom{ :style => "border: 1px solid black; height: auto;" }
+      #contentBody.ui-corner-bottom{ :style => "border: 1px solid black; height: auto; clear: both;" }
         = yield :content_body
     = yield
