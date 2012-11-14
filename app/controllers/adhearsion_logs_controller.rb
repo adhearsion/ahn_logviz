@@ -13,7 +13,7 @@ class AdhearsionLogsController < ApplicationController
 
   def parse
     @ahn_log = AdhearsionLog.new
-    logfile = File.new(Rails.root.join("public", "uploads", "templog.log"), 'w')
+    logfile = File.new(Rails.root.join("public", "uploads", "#{@ahn_log.id}.log"), 'w')
     if params[:log_file]
       logfile.write IO.read(params[:log_file].path)
       @ahn_log[:log] = (IO.read params[:log_file].path).split("\n")
