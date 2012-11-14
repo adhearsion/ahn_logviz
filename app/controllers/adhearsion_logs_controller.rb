@@ -2,7 +2,6 @@ require 'fileutils'
 require Rails.root.join("lib", "log_parser.rb")
 class AdhearsionLogsController < ApplicationController
 
-  rescue_from NoMethodError, :with => :bad_log
 
   def bad_log
     flash[:notice] = "Upload a real log next time. Tip: TRACE logs are the only kind that work here."
@@ -14,17 +13,23 @@ class AdhearsionLogsController < ApplicationController
 
   def parse
     @ahn_log = AdhearsionLog.new
-    file = File.new(Rails.root.join('public', 'uploads', "log#{AdhearsionLog.count + 1}.log"), 'w')
+    logfile = File.new(Rails.root.join("public", "uploads", "templog.log"), 'w')
     if params[:log_file]
-      uploaded_file = File.open(params[:log_file].path)
-      FileUtils.cp(uploaded_file, file)
+      logfile.write IO.read(params[:log_file].path)
+      @ahn_log[:log] = (IO.read params[:log_file].path).split("\n")
+      @ahn_log.save
     elsif !params[:pasted_text][0].empty?
+      @ahn_log[:log] = []
       params[:pasted_text].each do |text|
-        file.write text.gsub("\r\n", "\n")
+        logfile.write text
+        @ahn_log[:log] += text.split("\n")
       end
+      @ahn_log.save
     end
-    @ahn_log[:log_url] = "/uploads/log#{AdhearsionLog.count + 1}.log"
-    LogParser.new(File.open(file.path, 'r'), @ahn_log).run
+
+    logfile.close
+    LogParser.new(File.open(Rails.root.join("public", "uploads", "templog.log"), 'r'), @ahn_log).run
+    @ahn_log[:log_url] = "/adhearsion_logs/view_text_log/#{@ahn_log.id}"
     @ahn_log.save
     if @ahn_log.call_logs
       render "view"
@@ -32,5 +37,15 @@ class AdhearsionLogsController < ApplicationController
       flash[:notice] = "Upload a real log next time. Tip: TRACE logs are the only kind that work here."
       redirect_to "/"
     end
+  end
+
+  def view_text_log
+    @ahn_log = AdhearsionLog.find params[:id]
+    logfile = File.new(Rails.root.join("public", "uploads", "#{params[:id]}.log"), 'w')
+    @ahn_log[:log].each do |line|
+      logfile.write "#{line}\n"
+    end
+    logfile.close
+    redirect_to "/uploads/#{params[:id]}.log"
   end
 end
