@@ -28,7 +28,7 @@ class AdhearsionLogsController < ApplicationController
     end
 
     logfile.close
-    LogParser.new(File.open(Rails.root.join("public", "uploads", "templog.log"), 'r'), @ahn_log).run
+    LogParser.new(File.open(Rails.root.join("public", "uploads", "#{@ahn_log.id}.log"), 'r'), @ahn_log).run
     @ahn_log[:log_url] = "/adhearsion_logs/view_text_log/#{@ahn_log.id}"
     @ahn_log.save
     if @ahn_log.call_logs
