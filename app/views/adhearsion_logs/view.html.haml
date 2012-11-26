@@ -3,7 +3,7 @@
   $(document).tooltip();
 
 - content_for :content_header do
-  List of Call Logs
+  Adhearsion Log from #{@ahn_log.call_logs.first.start_time.strftime '%B %-d, %Y at %r'}
 
 - content_for :content_body do
   %ul{:style => 'list-style-type: none; margin: 3px; padding: 15px;'}
