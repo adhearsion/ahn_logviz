@@ -69,13 +69,30 @@ function drawEntities(call_array) {
   var lower_y = parseInt(document.getElementById('drawingCanvas').height) - 25;
   for(i=0; i < call_array.length; i++)
   {
+    $("body").append("<div id='ent_rect_top_" + i.toString() + "' style='display: none; position: absolute;'></div>");
+    $("#ent_rect_top_" + i.toString()).addClass('ui-corner-all');
+    $("#ent_rect_top_" + i.toString()).text(call_array[i][0][0])
     $("canvas").drawRect({
       layer: true,
+      name: "ent_rect_top_" + i.toString(),
       fillStyle: createEntityGradient(i*105,0),
       x: i*127, y: 0,
       width: 120, height: 30,
       fromCenter: false,
-      cornerRadius: 10
+      cornerRadius: 10,
+      mouseover: function(layer) {
+        $("#" + layer.name).css("left", ($("canvas").offset().left + layer.x).toString() + "px");
+        $("#" + layer.name).css("top", ($("canvas").offset().top + layer.y).toString() + "px");
+        $("#" + layer.name).css("background-color", "#FFFFFF");
+        $("#" + layer.name).css("border", "1px solid black");
+        $("#" + layer.name).css("width", "auto");
+        $("#" + layer.name).css("height", "15px");
+        $("#" + layer.name).css("padding", "5px");
+        $("#" + layer.name).show(400);
+      },
+      mouseout: function(layer) {
+        $("#" + layer.name).hide(400);
+      }
     }).drawRect({
       layer: true,
       fillStyle: createEntityGradient(i*105,lower_y),
