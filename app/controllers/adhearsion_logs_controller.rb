@@ -14,26 +14,29 @@ class AdhearsionLogsController < ApplicationController
   def parse
     @ahn_log = AdhearsionLog.new :log => []
     @ahn_log.save
-    logfile = File.new(Rails.root.join("public", "uploads", "#{@ahn_log.id}.log"), 'w')
     if params[:log_file]
-      logfile.write IO.read(params[:log_file].path)
+      Delayed::Job.enqueue AdhearsionLogJob.new(ahn_log_id: @ahn_log.id, file: params[:log_file].path, write_file: true)
     elsif !params[:pasted_text][0].empty?
+      logfile = File.new(Rails.root.join("public", "uploads", "#{@ahn_log.id}.log"), 'w')
       params[:pasted_text].each do |text| 
         logfile.write text
       end
+      Delayed::Job.enqueue AdhearsionLogJob.new(ahn_log_id: @ahn_log.id, file: logfile, write_file: false)
+      logfile.close
     end
     @ahn_log.save
-    logfile.close
-    LogParser.new(File.open(Rails.root.join("public", "uploads", "#{@ahn_log.id}.log"), 'r'), @ahn_log).run
     @ahn_log[:log_url] = "/adhearsion_logs/view_text_log/#{@ahn_log.id}"
     @ahn_log.save
     if @ahn_log.call_logs
-      Delayed::Job.enqueue AdhearsionLogJob.new(ahn_log_id: @ahn_log.id)
-      render "view"
+      redirect_to "/adhearsion_logs/processing_log/#{@ahn_log.id}"
     else
       flash[:notice] = "Upload a real log next time. Tip: TRACE logs are the only kind that work here."
       redirect_to "/"
     end
+  end
+
+  def processing_log
+    @ahn_log = AdhearsionLog.find params[:id]
   end
 
   def view_text_log

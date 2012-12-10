@@ -4,7 +4,7 @@ require 'date'
 
 class LogParser
   def initialize(log, ahn_log)
-    @log = log
+    @log = File.open(log, 'r')
     @ahn_log = ahn_log
     @stored_line = ""
     @line_number = 1
