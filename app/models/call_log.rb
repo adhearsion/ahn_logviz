@@ -30,7 +30,9 @@ class CallLog
   def event_array
     event_array = []
     self.call_events.all.to_a.each do |event|
-      event_array += [event.to_json.gsub('=', ':')]
+      event.log ||= ""
+      self.adhearsion_log.log[Range.new(event[:line_numbers].first, event[:line_numbers].last)].collect { |line| event.log += "#{line}\n" }
+      event_array += [event.to_json(:only => [:id, :message, :log]).gsub('=', ':')]
     end
     event_array.to_a
   end

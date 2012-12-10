@@ -17,6 +17,7 @@ class LogParser
     until @log.eof? do
       @joined_calls = []
       read_call
+      @ahn_log.save
     end
     rescue EOFError
       @log.close
@@ -188,7 +189,7 @@ class LogParser
     event.each do |e|
       new_call_ref e[:from] unless @call_log.calls[e[:from]]
       new_call_ref e[:to] unless @call_log.calls[e[:to]]
-      @call_log.call_events << CallEvent.new(:time => e[:time], :message => {:from => e[:from], :to => e[:to], :event => e[:event] + " (#{e[:time].strftime '%T'})"}, :log => e[:log])
+      @call_log.call_events << CallEvent.new(:time => e[:time], :message => {:from => e[:from], :to => e[:to], :event => e[:event] + " (#{e[:time].strftime '%T'})"}, :line_numbers => Range.new(@start_line, @end_line).to_a)
     end
   end
 
