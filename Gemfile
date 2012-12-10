@@ -5,6 +5,8 @@ ruby '1.9.3'
 gem 'rails', '3.1.3'
 gem 'mongoid', "~> 3.0.0"
 gem 'haml'
+gem 'daemons'
+gem 'delayed_job_mongoid'
 
 # Bundle edge Rails instead:
 # gem 'rails',     :git => 'git://github.com/rails/rails.git'
