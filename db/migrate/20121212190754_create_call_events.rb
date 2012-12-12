@@ -1,9 +1,10 @@
 class CreateCallEvents < ActiveRecord::Migration
   def change
     create_table :call_events do |t|
-      t.hash :message
-      t.time :time
+      t.integer :call_log_id
+      t.integer :message_id
       t.text :log
+      t.datetime :time
 
       t.timestamps
     end

@@ -2,6 +2,8 @@ development:
   adapter: postgresql 
   encoding: unicode
   database: ahn_logviz_dev 
+  host: localhost
+  username: wdrexler
   pool: 5
   timeout: 5000
 
@@ -12,6 +14,8 @@ test:
   adapter: postgresql 
   encoding: unicode
   database: ahn_logviz_test 
+  host: localhost
+  username: wdrexler
   pool: 5
   timeout: 5000
 
@@ -19,5 +23,7 @@ production:
   adapter: postgresql 
   encoding: unicode
   database: ahn_logviz 
+  host: localhost
+  username: wdrexler
   pool: 5
   timeout: 5000
