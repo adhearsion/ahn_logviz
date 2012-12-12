@@ -11,13 +11,13 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121212192527) do
+ActiveRecord::Schema.define(:version => 20121212212533) do
 
   create_table "adhearsion_logs", :force => true do |t|
     t.string   "log_url"
-    t.text     "log"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.binary   "log"
   end
 
   create_table "call_events", :force => true do |t|

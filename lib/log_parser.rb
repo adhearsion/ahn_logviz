@@ -29,9 +29,9 @@ class LogParser
   def read_call
     first_event = get_next_event
     @main_calls = [first_event[0][:from]]
-    @call_log = CallLog.new(:id => @main_calls[0], :calls => {'adhearsion' => "Adhearsion"})
-    @ahn_log.call_logs << @call_log
-    @call_log.save
+    @call_log = @ahn_log.call_logs.create
+    call = @call_log.calls.create(:ahn_call_id => "adhearsion", :call_name => "Adhearsion")
+    call.save!
     create_call_event find_dial(first_event)
     @current_event = first_event
     until calls_hungup? == true # do
@@ -187,9 +187,10 @@ class LogParser
 
   def create_call_event(event)
     event.each do |e|
-      new_call_ref e[:from] unless @call_log.calls[e[:from]]
-      new_call_ref e[:to] unless @call_log.calls[e[:to]]
-      @call_log.call_events << CallEvent.new(:time => e[:time], :message => {:from => e[:from], :to => e[:to], :event => e[:event] + " (#{e[:time].strftime '%T'})"}, :line_numbers => Range.new(@start_line, @end_line).to_a)
+      new_call_ref e[:from] unless @call_log.calls.where :ahn_call_id => e[:from]
+      new_call_ref e[:to] unless @call_log.calls.where :ahn_call_id => e[:to]
+      call_event = @call_log.call_events.create(:time => e[:time], :log => e[:log])
+      call_event.create_message(:from => e[:from], :to => e[:to], :event => e[:event] + " (#{e[:time].strftime '%T'})")
     end
   end
 
@@ -220,21 +221,21 @@ class LogParser
   end
 
   def new_call_ref(call_id)
-    @call_log.calls["#{call_id}"] = "Call#{@call_log.calls.length}"
+    @call_log.calls.create :ahn_call_id => "#{call_id}", :call_name => "Call#{@call_log.calls.length}"
   end
 
   def new_conf_bridge(conf_name)
-    @call_log.calls["#{conf_name}"] = "#{conf_name}"
+    @call_log.calls.create :ahn_call_id => "#{conf_name}", :call_name => "#{conf_name}"
     conf_name
   end
 
   def conf_bridge_exist?(conf_name)
-    @call_log.calls.has_key? conf_name
+    @call_log.calls.where :ahn_call_id => conf_name
   end
 
   def new_joined_call(calls)
-    @call_log.calls["jc#{@joined_calls.length}"] = "Bridge#{@joined_calls.length + 1}"
-    @joined_calls += [{:joined_call => @call_log.calls.keys.last, :calls => calls}]
+    @call_log.calls.create :ahn_call_id => "jc#{@joined_calls.length}", :call_name => "Bridge#{@joined_calls.length + 1}"
+    @joined_calls += [{:joined_call => @call_log.calls.last.ahn_call_id, :calls => calls}]
     @joined_calls.last[:joined_call]
   end
 
