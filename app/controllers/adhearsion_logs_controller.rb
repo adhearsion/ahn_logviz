@@ -38,7 +38,7 @@ class AdhearsionLogsController < ApplicationController
   def view_text_log
     @ahn_log = AdhearsionLog.find params[:id]
     logfile = File.new(Rails.root.join("public", "uploads", "#{params[:id]}.log"), 'w')
-    logfile.write inflate(@ahn_log[:log])
+    logfile.write Zlib::Inflate.inflate(@ahn_log[:log])
     logfile.close
     redirect_to "/uploads/#{params[:id]}.log"
   end
