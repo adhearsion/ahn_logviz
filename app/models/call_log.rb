@@ -21,7 +21,7 @@ class CallLog < ActiveRecord::Base
   def call_array
     calls_array = []
     self.calls.all.each do |call|
-      calls_array += ["#{call.ahn_call_id}", "#{call.call_name}"]
+      calls_array += [["#{call.ahn_call_id}", "#{call.call_name}"]]
     end
     calls_array
   end

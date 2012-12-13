@@ -187,8 +187,8 @@ class LogParser
 
   def create_call_event(event)
     event.each do |e|
-      new_call_ref e[:from] unless @call_log.calls.where :ahn_call_id => e[:from]
-      new_call_ref e[:to] unless @call_log.calls.where :ahn_call_id => e[:to]
+      new_call_ref e[:from] if @call_log.calls.where(:ahn_call_id => e[:from]).empty?
+      new_call_ref e[:to] if @call_log.calls.where(:ahn_call_id => e[:to]).empty?
       call_event = @call_log.call_events.create(:time => e[:time], :log => e[:log])
       call_event.create_message(:from => e[:from], :to => e[:to], :event => e[:event] + " (#{e[:time].strftime '%T'})")
     end
