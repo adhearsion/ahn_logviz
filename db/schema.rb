@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121212212533) do
+ActiveRecord::Schema.define(:version => 20121213180244) do
 
   create_table "adhearsion_logs", :force => true do |t|
     t.string   "log_url"
@@ -33,6 +33,7 @@ ActiveRecord::Schema.define(:version => 20121212212533) do
     t.integer  "adhearsion_log_id"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "ahn_call_name"
   end
 
   create_table "calls", :force => true do |t|

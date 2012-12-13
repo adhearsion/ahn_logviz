@@ -29,7 +29,7 @@ class LogParser
   def read_call
     first_event = get_next_event
     @main_calls = [first_event[0][:from]]
-    @call_log = @ahn_log.call_logs.create
+    @call_log = @ahn_log.call_logs.create(:ahn_call_name => first_event[0][:from])
     call = @call_log.calls.create(:ahn_call_id => "adhearsion", :call_name => "Adhearsion")
     call.save!
     create_call_event find_dial(first_event)
