@@ -1,4 +1,5 @@
 require_relative "../../lib/ahn_config_parser"
+require_relative "../../lib/rayo_parser"
 describe AhnConfigParser do
 
   before :each do
@@ -37,6 +38,33 @@ describe AhnConfigParser do
       @ahn_log.should_receive(:startup_events).and_return @startup_events
       @startup_events.should_receive(:create).with(key: "config.punchblock.password", value: "\"Stoptryingtostealmypassword\"")
       @parser.process_config line
+    end
+  end
+
+  describe "#read_configs" do
+    before do
+      @lines = ["config.punchblock.username = \"fake@ahnlogviz.net\"", "config.punchblock.platform = :xmpp", "[TIME GOES HERE] TRACE Adhearsion::DoesItsThing"]
+      @ahn_log.stub!(:startup_events).and_return @startup_events
+      @startup_events.stub!(:create)
+    end
+
+    it "should read until there is no longer a config line" do
+      3.times do |i|
+        @logfile.should_receive(:readline).and_return @lines[i]
+      end
+      @parser.should_receive(:process_config).twice
+      @ahn_log.should_receive(:save)
+      @parser.should_receive(:execute_parser)
+      @parser.read_configs
+    end
+    
+    it "should pass the correct information to the parser" do
+      3.times do |i|
+        @logfile.should_receive(:readline).and_return @lines[i]
+      end
+      @ahn_log.should_receive(:save)
+      RayoParser.should_receive(:new).with(@logfile, @ahn_log, 3, "fake@ahnlogviz.net")
+      @parser.read_configs
     end
 
   end
