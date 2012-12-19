@@ -2,10 +2,7 @@ class AhnConfigParser
   def initialize(log, ahn_log)
     @log = File.open(log, 'r')
     @ahn_log = ahn_log
-    @stored_line = ""
     @line_number = 1
-    @start_line = 0
-    @end_line = 0
     @parser_type = nil 
     @pb_user = nil
   end
@@ -34,7 +31,7 @@ class AhnConfigParser
     config_option = line.split "="
     case config_option[0]
     when /config\.punchblock\.platform/
-      @parser_type = config_option[1].to_sym
+      @parser_type = config_option[1].delete(":").to_sym
     when /config\.punchblock\.username/
       @pb_user = config_option[1]
     end
