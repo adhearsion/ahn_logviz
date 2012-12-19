@@ -22,7 +22,6 @@ class AhnConfigParser
       process_config line     
       @line_number += 1 
     end
-    @line_number -= 1 #The last line read was not config
     @ahn_log.save
     execute_parser
   end
@@ -33,13 +32,13 @@ class AhnConfigParser
     when /config\.punchblock\.platform/
       @parser_type = config_option[1].delete(":").to_sym
     when /config\.punchblock\.username/
-      @pb_user = config_option[1]
+      @pb_user = config_option[1].delete("\"")
     end
     @ahn_log.startup_events.create(key: config_option[0], value: config_option[1])
   end
 
   def execute_parser
-    RayoParser.new(@log, @ahn_log, @line_number) if @parser_type == :xmpp
+    RayoParser.new(@log, @ahn_log, @line_number, @pb_user) if @parser_type == :xmpp
     AsteriskParser.new(@log, @ahn_log, @line_number) if @parser_type == :asterisk
     exit if @parser_type == :none || @parser_type == :freeswitch
   end
