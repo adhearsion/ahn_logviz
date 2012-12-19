@@ -17,7 +17,7 @@ class AhnConfigParser
     (line =~ /^config/) == 0
   end
 
-  def read_startup_events
+  def read_configs
     while config_line? (line = @log.readline(@line_number)) do
       process_config line     
       @line_number += 1 
