@@ -1,4 +1,4 @@
-class AhnStartupParser
+class AhnConfigParser
   def initialize(log, ahn_log)
     @log = File.open(log, 'r')
     @ahn_log = ahn_log
