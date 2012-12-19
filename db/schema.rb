@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121213180244) do
+ActiveRecord::Schema.define(:version => 20121219152308) do
 
   create_table "adhearsion_logs", :force => true do |t|
     t.string   "log_url"
@@ -51,6 +51,14 @@ ActiveRecord::Schema.define(:version => 20121213180244) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "call_event_id"
+  end
+
+  create_table "startup_events", :force => true do |t|
+    t.string   "key"
+    t.string   "value"
+    t.integer  "adhearsion_log_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
 end
