@@ -45,9 +45,14 @@ class RayoParser
   def read_next_call
     @call_log = @ahn_log.call_logs.create
     @call_log.calls.create ahn_call_id: @pb_user, call_name: "Adhearsion"
-    until hungup? @call_log 
-      get_event @log.readline(@line_number)
-      line_number += 1
+    until hungup? @call_log
+      message = @log.readline @line_number
+      @line_number += 1
+      until timestamped? @log.readline(@line_number)
+        message += @log.readline @line_number
+        @line_number += 1
+      end
+      get_event message 
     end
   end
 
@@ -69,7 +74,7 @@ class RayoParser
         event_data = { to: @pb_user, from: @pb_user, event: ["ERROR"] }
       else
       end
-      create_event message, time, event_data
+    create_event message, time, event_data
     end
   end
 
@@ -136,7 +141,11 @@ class RayoParser
   end
 
   def process_joined_call(node)
-    @call_log.calls.each { |call| return if call.ahn_call_id = node["to"] }
+    @call_log.calls.each do |call| 
+      if call.ahn_call_id = node["to"]
+        @joined_calls.each { |joined_call| joined_call[:calls_connected] += 1 if joined_call[:id] == node["to"] }
+      end
+    end
     @joined_calls += [{id: node["to"], calls_connected: 1}]
     @call_log.calls.create ahn_call_id: node["to"], call_name: "Bridge #{@joined_calls.length}" 
   end
