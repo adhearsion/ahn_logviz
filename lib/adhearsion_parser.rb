@@ -41,6 +41,9 @@ class AdhearsionParser
   end
 
   def create_event(log, time_string, data)
+    [data[:to], data[:from]].each do |jid|
+      check_calls jid
+    end
     data[:event].each do |event|
       call_event = @call_log.call_events.create log: log, time: Date.strptime(time_string, "%Y-%m-%d %H:%M:%S")
       call_event.message.create from: data[:from], to: data[:to], event: event
@@ -62,5 +65,14 @@ class AdhearsionParser
   end
 
   def get_event(message)
+  end
+
+  def create_call(jid)
+    call_num = @call_log.calls.count - @joined_calls.length
+    @call_log.calls.create ahn_call_id: jid, call_name: "Call #{call_num}"
+  end
+
+  def check_calls(jid)
+    create_call jid if @call_log.calls.where(ahn_call_id: jid).empty?
   end
 end
