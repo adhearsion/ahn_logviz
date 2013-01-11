@@ -1,6 +1,6 @@
 require 'fileutils'
 require 'zlib'
-require Rails.root.join("lib", "log_parser.rb")
+require Rails.root.join("lib", "ahn_config_parser.rb")
 class AdhearsionLogsController < ApplicationController
 
 
@@ -24,7 +24,7 @@ class AdhearsionLogsController < ApplicationController
     end
     logfile.close
     @ahn_log.log = Zlib::Deflate.deflate IO.read(Rails.root.join("public", "uploads", "#{@ahn_log.id}.log"))
-    LogParser.new(Rails.root.join("public","uploads","#{@ahn_log.id}.log"), @ahn_log).run
+    AhnConfigParser.new(Rails.root.join("public","uploads","#{@ahn_log.id}.log"), @ahn_log).run
     @ahn_log.log_url = "/adhearsion_logs/view_text_log/#{@ahn_log.id}"
     @ahn_log.save
     if @ahn_log.call_logs

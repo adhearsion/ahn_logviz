@@ -1,3 +1,4 @@
+require_relative "./rayo_parser"
 class AhnConfigParser
   def initialize(log, ahn_log)
     @log = File.open(log, 'r')
@@ -10,6 +11,13 @@ class AhnConfigParser
   def strip_formatting!(line)
     line.gsub!(/\e\[(\d+;?)*\]?m/, '')
     line.delete! " "
+    line.delete! ":"
+    line.delete! "\""
+    line.delete! "\n"
+  end
+  
+  def timestamped?(line)
+    (line =~ /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/) == 0
   end
 
   def config_line?(line)
@@ -17,8 +25,9 @@ class AhnConfigParser
     (line =~ /^config/) == 0
   end
 
-  def read_configs
-    while config_line? (line = @log.readline(@line_number)) do
+  def run 
+    @line_number += 1 until config_line? @log.readline(@line_number)
+    until timestamped? (line = @log.readline(@line_number)) do
       process_config line     
       @line_number += 1 
     end
@@ -27,18 +36,18 @@ class AhnConfigParser
   end
 
   def process_config(line)
+    strip_formatting! line
     config_option = line.split "="
-    case config_option[0]
-    when /config\.punchblock\.platform/
-      @parser_type = config_option[1].delete(":").to_sym
-    when /config\.punchblock\.username/
-      @pb_user = config_option[1].delete("\"")
-    end
     @ahn_log.startup_events.create(key: config_option[0], value: config_option[1])
   end
 
   def execute_parser
-    RayoParser.new(@log, @ahn_log, @line_number, @pb_user) if @parser_type == :xmpp
+    @parser_type = @ahn_log.startup_events.where(key: "config.punchblock.platform").first.value
+    @pb_user = @ahn_log.startup_events.where(key: "config.punchblock.username").first.value
+    file = File.open("/Users/wdrexler/Desktop/rails.log", 'w')
+    file.write @parser_type
+    file.close
+    RayoParser.new(@log, @ahn_log, @line_number, @pb_user).run if @parser_type == "xmpp" 
     AsteriskParser.new(@log, @ahn_log, @line_number) if @parser_type == :asterisk
     exit if @parser_type == :none || @parser_type == :freeswitch
   end

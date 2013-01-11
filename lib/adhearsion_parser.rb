@@ -4,6 +4,7 @@ class AdhearsionParser
     @ahn_log = ahn_log
     @line_number = line_number
     @pb_user = pb_user
+    @joined_calls = []
   end
 
   def run
@@ -28,25 +29,15 @@ class AdhearsionParser
   end
 
   def hungup?(call_log)
-    calls = call_log.calls.all
-    call_events = call_log.call_events
-    num_hungup = 1 #We don't wait for Adhearsion to hangup
-    @joined_calls.each do |joined_call|
-      num_hungup += 1 if joined_call[:calls_connected] == 0
-    end
-    calls.each do |call|
-      num_hungup += 1 unless call_log.call_events.messages.where(from: call.ahn_call_id, event: "Hangup").empty?
-    end
-    num_hungup == calls.length
+    call_log.messages.where(event: "Hangup").count >= 3 
   end
 
-  def create_event(log, time_string, data)
-    [data[:to], data[:from]].each do |jid|
-      check_calls jid
-    end
+  def make_event(log, time_string, data)
+    check_calls data[:from]
+    check_calls data[:to]
     data[:event].each do |event|
       call_event = @call_log.call_events.create log: log, time: Date.strptime(time_string, "%Y-%m-%d %H:%M:%S")
-      call_event.message.create from: data[:from], to: data[:to], event: event
+      call_event.create_message from: data[:from], to: data[:to], event: event
     end
   end
   
@@ -54,14 +45,21 @@ class AdhearsionParser
     @call_log = @ahn_log.call_logs.create
     @call_log.calls.create ahn_call_id: @pb_user, call_name: "Adhearsion"
     until hungup? @call_log
+      get_event get_next_message
+    end
+  end
+
+  def get_next_message
+    message = ""
+    until readable? message
       message = @log.readline @line_number
       @line_number += 1
-      until timestamped? @log.readline(@line_number)
-        message += @log.readline @line_number
-        @line_number += 1
-      end
-      get_event message 
     end
+    until timestamped? @log.readline(@line_number)
+      message += "#{@log.readline(@line_number)}"
+      @line_number += 1
+    end
+    message
   end
 
   def get_event(message)
