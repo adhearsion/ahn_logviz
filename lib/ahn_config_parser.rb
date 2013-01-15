@@ -27,7 +27,7 @@ class AhnConfigParser
 
   def run 
     @line_number += 1 until config_line? @log.readline(@line_number)
-    until timestamped? (line = @log.readline(@line_number)) do
+    until timestamped? line = @log.readline(@line_number) do
       process_config line     
       @line_number += 1 
     end
@@ -44,11 +44,8 @@ class AhnConfigParser
   def execute_parser
     @parser_type = @ahn_log.startup_events.where(key: "config.punchblock.platform").first.value
     @pb_user = @ahn_log.startup_events.where(key: "config.punchblock.username").first.value
-    file = File.open("/Users/wdrexler/Desktop/rails.log", 'w')
-    file.write @parser_type
-    file.close
     RayoParser.new(@log, @ahn_log, @line_number, @pb_user).run if @parser_type == "xmpp" 
-    AsteriskParser.new(@log, @ahn_log, @line_number) if @parser_type == :asterisk
-    exit if @parser_type == :none || @parser_type == :freeswitch
+    AsteriskParser.new(@log, @ahn_log, @line_number) if @parser_type == "asterisk" 
+    exit if @parser_type == nil || @parser_type == "freeswitch"
   end
 end
