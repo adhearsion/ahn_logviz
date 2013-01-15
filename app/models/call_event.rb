@@ -1,4 +1,3 @@
 class CallEvent < ActiveRecord::Base
-  belongs_to :call_log
-  has_one :message
+  attr_accessible :call_id, :event, :from, :log, :time, :to
 end

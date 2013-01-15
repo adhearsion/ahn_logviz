@@ -11,54 +11,44 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121219152308) do
+ActiveRecord::Schema.define(:version => 20130115172754) do
 
   create_table "adhearsion_logs", :force => true do |t|
-    t.string   "log_url"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "start_time"
+    t.string   "name"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
     t.binary   "log"
   end
 
   create_table "call_events", :force => true do |t|
-    t.integer  "call_log_id"
-    t.integer  "message_id"
-    t.text     "log"
-    t.datetime "time"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  create_table "call_logs", :force => true do |t|
-    t.integer  "adhearsion_log_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.string   "ahn_call_name"
-  end
-
-  create_table "calls", :force => true do |t|
-    t.integer  "call_log_id"
-    t.string   "ahn_call_id"
-    t.string   "call_name"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  create_table "messages", :force => true do |t|
+    t.string   "log"
     t.string   "from"
     t.string   "to"
     t.string   "event"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.integer  "call_event_id"
+    t.integer  "call_id"
+    t.datetime "time"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  create_table "calls", :force => true do |t|
+    t.datetime "start_time"
+    t.boolean  "is_master"
+    t.integer  "adhearsion_log_id"
+    t.integer  "master_call_id"
+    t.string   "sip_address"
+    t.string   "ahn_call_id"
+    t.datetime "created_at",        :null => false
+    t.datetime "updated_at",        :null => false
   end
 
   create_table "startup_events", :force => true do |t|
     t.string   "key"
     t.string   "value"
-    t.integer  "adhearsion_log_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at",        :null => false
+    t.datetime "updated_at",        :null => false
+    t.string   "adhearsion_log_id"
   end
 
 end

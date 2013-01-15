@@ -1,3 +1,3 @@
 class Call < ActiveRecord::Base
-  belongs_to :call_log
+  attr_accessible :adhearsion_log_id, :ahn_call_id, :is_master, :master_call_id, :sip_address, :start_time
 end

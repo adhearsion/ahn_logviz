@@ -1,8 +1,9 @@
 class CreateAdhearsionLogs < ActiveRecord::Migration
   def change
     create_table :adhearsion_logs do |t|
-      t.string :log_url
-      t.text :log
+      t.datetime :start_time
+      t.string :name
+      t.string :log
 
       t.timestamps
     end
