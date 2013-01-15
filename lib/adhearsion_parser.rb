@@ -1,76 +1,57 @@
 class AdhearsionParser
+  TIMESTAMP = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/
+
   def initialize(log, ahn_log, line_number, pb_user)
     @log = log
     @ahn_log = ahn_log
     @line_number = line_number
     @pb_user = pb_user
-    @joined_calls = []
   end
 
   def run
     begin
       until @log.eof? do
-        @joined_calls = []
-        read_next_call
+        new_event get_next_message
       end
     rescue EOFError
       @log.close
     ensure
-      @call_log.save
+      @ahn_log.save
     end
-  end
-
-  def readable?(message)
-    (message =~ /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] TRACE/) == 0 || (message =~ /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] ERROR/) == 0
   end
 
   def timestamped?(message)
-    (message =~ /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\]/) == 0
+    (message =~ /#{TIMESTAMP}/) == 0
   end
 
-  def hungup?(call_log)
-    call_log.messages.where(event: "Hangup").count >= 3 
+  def readable?(message)
+    (message =~ /#{TIMESTAMP} TRACE/) == 0 || (message =~ /#{TIMESTAMP} ERROR/) == 0
   end
 
-  def make_event(log, time_string, data)
-    check_calls data[:from]
-    check_calls data[:to]
-    data[:event].each do |event|
-      call_event = @call_log.call_events.create log: log, time: Date.strptime(time_string, "%Y-%m-%d %H:%M:%S")
-      call_event.create_message from: data[:from], to: data[:to], event: event
-    end
-  end
-  
-  def read_next_call
-    @call_log = @ahn_log.call_logs.create
-    @call_log.calls.create ahn_call_id: @pb_user, call_name: "Adhearsion"
-    until hungup? @call_log
-      get_event get_next_message
-    end
+  def get_time(message)
+    time_string = message.match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/).to_s
+    DateTime.strptime time_string, "%Y-%m-%d %H:%M:%S" if time_string
   end
 
   def get_next_message
-    message = ""
-    until readable? message
-      message = @log.readline @line_number
-      @line_number += 1
-    end
-    until timestamped? @log.readline(@line_number)
-      message += "#{@log.readline(@line_number)}"
+    @line_number += 1 until readable? @log.readline(@line_number)
+    message = @log.readline(@line_number)
+    @line_number += 1
+    until timestamped?(line = @log.readline(@line_number))
+      message += line
       @line_number += 1
     end
     message
   end
 
   def get_event(message)
+    #Dummy method: Implementation varies depending on type of log parsed
   end
 
-  def create_call(jid)
-    call_num = @call_log.calls.count - @joined_calls.length
-    @call_log.calls.create ahn_call_id: jid, call_name: "Call #{call_num}"
+  def new_event(call, message)
+    event = get_event message
+    call.call_events.create log: message, time: get_time(message), 
+      from: event[:from], to: event[:to], event: event[:event] if event
   end
 
-  def check_calls(jid)
-    create_call jid if @call_log.calls.where(ahn_call_id: jid).empty?
-  end
 end

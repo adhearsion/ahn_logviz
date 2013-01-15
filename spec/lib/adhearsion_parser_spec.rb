@@ -36,31 +36,48 @@ describe AdhearsionParser, focus: true do
 
     end
 
-  end
-
-  describe "#hungup?" do
-    before :each do
-      @log = mock("mock log")
-      @ahn_log = AdhearsionLog.create
-      @call_log = @ahn_log.call_logs.create
-      @call_log.calls.create(ahn_call_id: "will@adhearsion.com", call_name: "Adhearsion")
-      @call_log.calls.create(ahn_call_id: "fake@0.com", call_name: "Call 1")
-      @call_log.calls.create(ahn_call_id: "fake@1.com", call_name: "Call 2")
-      2.times do |i|
-        sip_addr = "fake@#{i}.com"
-        event = @call_log.call_events.create(log: "log goes here", time: Time.now)
-        event.create_message!(to: sip_addr, from: sip_addr, event: "Hangup")
+    describe "#get_time" do
+      it "Should return the proper time on timestamped messages" do
+        message = "[2012-12-21 00:00:00] BLAH"
+        @parser.get_time(message).should == DateTime.new(2012,12,21,0,0,0)
       end
-      @parser = AdhearsionParser.new(@log, @ahn_log, 1, "will@adhearsion.com")
-    end
-
-    it "should mark the CallLog as hungup if all calls are hungup" do
-      @parser.hungup?(@call_log).should == true
-    end
-
-    it "should mark the CallLog as active if not all calls are hungup" do
     end
 
   end
+
+  describe "#get_next_message" do
+    before :each do
+      @log = mock "Mock Log"
+      @parser = AdhearsionParser.new(@log, "Random", 1, "Parameters")
+    end
+    
+    it "should select only a trace message" do
+      lines = ["[2012-12-21 00:00:00] TRACE Something::Something",
+             "[2012-12-21 00:00:00] DEBUG Something::Else"]
+      @log.should_receive(:readline).and_return lines[0]
+      2.times do |i|
+        @log.should_receive(:readline).and_return lines[i]
+      end
+      @parser.get_next_message.should == lines[0]
+    end
+  end
+
+  describe "#new_event" do
+    before :each do
+      @call = Call.new start_time: DateTime.new, is_master: true, sip_address: "fake@ahnlogviz.net"
+      @call_events = mock "Mock CallEvents"
+      @call.stub!(:call_events).and_return @call_events
+      @parser = AdhearsionParser.new("No", "Need", "For", "Params")
+    end 
+
+    it "should create a new event" do
+      message = "[2012-12-21 00:00:00] A message"
+      @parser.should_receive(:get_event).and_return({ from: "fake@ahnlogviz.net", to: "fake@ahnlogviz.net", event: "Hangup" })
+      @call_events.should_receive(:create).with(log: message, time: DateTime.new(2012,12,21,0,0,0), from: "fake@ahnlogviz.net", to: "fake@ahnlogviz.net", event: "Hangup")
+      @parser.new_event(@call, message)
+    end
+  end
+
+  
 
 end
