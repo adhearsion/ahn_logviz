@@ -48,7 +48,7 @@ describe RayoParser do
   describe "#process_sent_iq" do
     it "should properly process a sent <join>" do
       message = Nokogiri::XML "<iq to=\"random_string@ahnlogviz.net\"><join call-id=\"random_string2\"></iq>"
-      @parser.process_sent_iq(message).should == { from: "random_string2@ahnlogviz.net", to: "random_string@ahnlogviz.net", event: "Join" }
+      @parser.process_sent_iq(message).should == { from: "random_string@ahnlogviz.net", to: "random_string2@ahnlogviz.net", event: "Join" }
     end
 
     it "should send <dial>s to #process_dial" do
@@ -56,12 +56,33 @@ describe RayoParser do
       @parser.should_receive :process_dial
       @parser.process_sent_iq message
     end
+
   end
 
   describe "#process_received_presence" do
     it "should send <offer>s to #process_offer" do
       message = Nokogiri::XML "<offer/>"
       @parser.should_receive :process_offer
+      @parser.process_received_presence message
+    end
+
+    it "should process <ringing> properly" do
+      message = Nokogiri::XML "<presence from=\"random_string@ahnlogviz.net\" to=\"#{@pb_user}\"><ringing/></presence>"
+      @parser.process_received_presence(message).should == {from: "random_string@ahnlogviz.net",
+                                                            to: "random_string@ahnlogviz.net", 
+                                                            event: "Ringing"} 
+    end
+
+    it "should process <answered> properly" do
+      message = Nokogiri::XML "<presence from=\"random_string@ahnlogviz.net\"><answered/></presence>"
+      @parser.process_received_presence(message).should == {from: "random_string@ahnlogviz.net",
+                                                            to: "random_string@ahnlogviz.net",
+                                                            event: "Answer"}
+    end
+
+    it "should send <input>s to #process_input" do
+      message = Nokogiri::XML "<presence><input /></presence>"
+      @parser.should_receive :process_input
       @parser.process_received_presence message
     end
   end
@@ -87,5 +108,44 @@ describe RayoParser do
       @ahn_log.calls.where(ahn_call_id: "random_string2@ahnlogviz.net", is_master: false).should_not == []
     end
   end
+
+  describe "#process_offer" do
+    it "should create a new call if the offer is to Adhearsion" do
+      message = "<presence from=\"random_string@ahnlogviz.net\" to=\"#{@pb_user}\"><offer from=\"sip:fake@ahnlogviz.net\" to=\"sip_address2\"></offer></presence>"
+      xml = Nokogiri::XML message
+      @parser.process_offer(xml).should == { from: "random_string@ahnlogviz.net", to: @pb_user, event: "Call" }
+      @ahn_log.calls.where(sip_address: "sip:fake@ahnlogviz.net", 
+                           ahn_call_id: "random_string@ahnlogviz.net",
+                           is_master: true).should_not == []
+      @ahn_log.calls.where(sip_address: "Adhearsion",
+                           ahn_call_id: @pb_user,
+                           is_master: false).should_not == []
+    end
+
+    it "should not create a new call if the offer is not to Adhearsion" do
+      message = "<presence from=\"random_string@ahnlogviz.net\" to=\"random_string2@ahnlogviz.net\"><offer from=\"sip:fake@ahnlogviz.net\"/></presence>"
+      xml = Nokogiri::XML message
+      @parser.process_offer(xml).should == nil
+      @ahn_log.calls.where(ahn_call_id: "random_string@ahnlogviz.net").should == []
+    end
+  end
+
+  describe "#process_input" do
+    it "should process ASR matches" do
+      message = "<presence from=\"random_string@ahnlogviz.net\"><complete><match><input mode=\"speech\">hello</input></match></complete>"
+      xml = Nokogiri::XML message
+      @parser.process_input(xml).should == { from: "random_string@ahnlogviz.net",
+                                             to: "random_string@ahnlogviz.net",
+                                             event: "ASR Input: \"hello\"" }
+    end
+
+    it "should process ASR nomatch" do
+      xml = Nokogiri::XML "<presence from=\"random_string@ahnlogviz.net\"><complete><nomatch/></complete>"
+      @parser.process_input(xml).should == { from: "random_string@ahnlogviz.net",
+                                             to: "random_string@ahnlogviz.net",
+                                             event: "ASR NoMatch" }
+    end
+  end
+
 
 end
