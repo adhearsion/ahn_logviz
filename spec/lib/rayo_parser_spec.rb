@@ -57,6 +57,11 @@ describe RayoParser do
       @parser.process_sent_iq message
     end
 
+    it "should send <output>s to #process_output" do
+      message = Nokogiri::XML "<presence><output></presence>"
+      @parser.should_receive :process_output
+      @parser.process_sent_iq message
+    end
   end
 
   describe "#process_received_presence" do
@@ -144,6 +149,22 @@ describe RayoParser do
       @parser.process_input(xml).should == { from: "random_string@ahnlogviz.net",
                                              to: "random_string@ahnlogviz.net",
                                              event: "ASR NoMatch" }
+    end
+  end
+
+  describe "#process_output" do
+    it "should process TTS Output" do
+      xml = Nokogiri::XML "<iq to=\"random_string@ahnlogviz.net\"><output><speak>Hello</speak></output></iq>"
+      @parser.process_output(xml).should == { from: "random_string@ahnlogviz.net",
+                                              to: "random_string@ahnlogviz.net",
+                                              event: "TTS Output: \"Hello\"" }
+    end
+
+    it "should process audio file output" do
+      xml = Nokogiri::XML "<iq to=\"random_string@ahnlogviz.net\"><output><speak><audio/></speak></output></iq>"
+      @parser.process_output(xml).should == { from: "random_string@ahnlogviz.net",
+                                              to: "random_string@ahnlogviz.net",
+                                              event: "Output: Audio File" }
     end
   end
 

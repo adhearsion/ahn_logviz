@@ -45,10 +45,15 @@ class RayoParser < AdhearsionParser
                 event: "Join" }
     when /<dial/
       event = process_dial xml
+    when /<output/
+      event = process_output xml
     else
       event = nil
     end
     event
+  end
+
+  def process_received_iq(xml)
   end
 
   def process_received_presence(xml)
@@ -106,6 +111,16 @@ class RayoParser < AdhearsionParser
       event = nil #Waiting for data
     end
     event
+  end
+
+  def process_output(xml)
+    ahn_call_id = xml.xpath("//iq")[0]['to']
+    if xml.xpath("//audio").empty?
+      output = xml.xpath("//speak")[0].inner_text
+      { from: ahn_call_id, to: ahn_call_id, event: "TTS Output: \"#{output}\"" }
+    else
+      {from: ahn_call_id, to: ahn_call_id, event: "Output: Audio File" }
+    end
   end
   
 end
