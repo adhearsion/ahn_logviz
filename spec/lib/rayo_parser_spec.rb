@@ -58,9 +58,15 @@ describe RayoParser do
     end
 
     it "should send <output>s to #process_output" do
-      message = Nokogiri::XML "<presence><output></presence>"
+      message = Nokogiri::XML "<iq><output></iq>"
       @parser.should_receive :process_output
       @parser.process_sent_iq message
+    end
+
+    it "should indicate awaiting input" do
+      message = Nokogiri::XML "<iq to=\"random_string@ahnlogviz.net\"><input/></iq>"
+      @parser.process_sent_iq(message).should == {from: @pb_user, to: "random_string@ahnlogviz.net",
+                                         event: "Getting Input..."}
     end
   end
 
@@ -155,14 +161,14 @@ describe RayoParser do
   describe "#process_output" do
     it "should process TTS Output" do
       xml = Nokogiri::XML "<iq to=\"random_string@ahnlogviz.net\"><output><speak>Hello</speak></output></iq>"
-      @parser.process_output(xml).should == { from: "random_string@ahnlogviz.net",
+      @parser.process_output(xml).should == { from: @pb_user,
                                               to: "random_string@ahnlogviz.net",
                                               event: "TTS Output: \"Hello\"" }
     end
 
     it "should process audio file output" do
       xml = Nokogiri::XML "<iq to=\"random_string@ahnlogviz.net\"><output><speak><audio/></speak></output></iq>"
-      @parser.process_output(xml).should == { from: "random_string@ahnlogviz.net",
+      @parser.process_output(xml).should == { from: @pb_user,
                                               to: "random_string@ahnlogviz.net",
                                               event: "Output: Audio File" }
     end

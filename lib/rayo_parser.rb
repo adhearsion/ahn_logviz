@@ -47,6 +47,10 @@ class RayoParser < AdhearsionParser
       event = process_dial xml
     when /<output/
       event = process_output xml
+    when /<input/
+      event = { from: @pb_user,
+                to: xml.xpath("//iq")[0]['to'],
+                event: "Getting Input..."}
     else
       event = nil
     end
@@ -101,11 +105,11 @@ class RayoParser < AdhearsionParser
   def process_input(xml)
     case xml.to_s
     when /<match/
-      ahn_call_id = xml.xpath("//presence")[0]['from']
+      ahn_call_id = xml.xpath("//presence")[0]['from'].split("/")[0]
       input = xml.xpath("//input")[0].inner_text
       event = { from: ahn_call_id, to: ahn_call_id, event: "ASR Input: \"#{input}\""}
     when /<nomatch/
-      ahn_call_id = xml.xpath("//presence")[0]['from']
+      ahn_call_id = xml.xpath("//presence")[0]['from'].split("/")[0]
       event = { from: ahn_call_id, to: ahn_call_id, event: "ASR NoMatch"}
     else
       event = nil #Waiting for data
@@ -117,9 +121,9 @@ class RayoParser < AdhearsionParser
     ahn_call_id = xml.xpath("//iq")[0]['to']
     if xml.xpath("//audio").empty?
       output = xml.xpath("//speak")[0].inner_text
-      { from: ahn_call_id, to: ahn_call_id, event: "TTS Output: \"#{output}\"" }
+      { from: @pb_user, to: ahn_call_id, event: "TTS Output: \"#{output}\"" }
     else
-      {from: ahn_call_id, to: ahn_call_id, event: "Output: Audio File" }
+      {from: @pb_user, to: ahn_call_id, event: "Output: Audio File" }
     end
   end
   
