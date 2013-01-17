@@ -48,8 +48,10 @@ class AdhearsionParser
     #Dummy method: Implementation varies depending on type of log parsed
   end
 
-  def new_event(call, message)
-    event = get_event message
+  def new_event(message)
+    event_hash = get_event message
+    event = event_hash[:event]
+    call = event_hash[:call]
     call.call_events.create log: message, time: get_time(message), 
       from: event[:from], to: event[:to], event: event[:event] if event
   end

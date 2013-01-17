@@ -30,8 +30,10 @@ class RayoParser < AdhearsionParser
       event = xml.xpath("//presence").empty? ? nil : process_received_presence(xml)
     when /ERROR/
       event = { from: @pb_user, to: @pb_user, event: "ERROR" }
+      call = @ahn_log.calls.where(ahn_call_id: @pb_user).last
+      event = { event: event, call: call}
     else
-      event = nil
+      event = { event: nil, call: nil }
     end
     event
   end
@@ -43,6 +45,7 @@ class RayoParser < AdhearsionParser
       event = { to: "#{join_node['call-id']}@#{@ahn_domain}",
                 from: "#{xml.xpath("//iq")[0]['to']}",
                 event: "Join" }
+      call = Call.where(ahn_call_id: event[:from]).last
     when /<dial/
       event = process_dial xml
     when /<output/
@@ -51,10 +54,13 @@ class RayoParser < AdhearsionParser
       event = { from: @pb_user,
                 to: xml.xpath("//iq")[0]['to'],
                 event: "Getting Input..."}
+      master_call = @ahn_log.calls.where(ahn_call_id: event[:to]).last
+      call = @ahn_log.calls.where(ahn_call_id: event[:from], master_call_id: master_call.id).last
     else
+      call = nil
       event = nil
     end
-    event
+    { call: call, event: event }
   end
 
   def process_received_iq(xml)
@@ -67,15 +73,18 @@ class RayoParser < AdhearsionParser
     when /<ringing/
       jid = xml.xpath("//presence")[0]['from']
       event = { from: jid, to: jid, event: "Ringing" }
+      call = @ahn_log.calls.where(ahn_call_id: jid).last
     when /<answered/
       jid = xml.xpath("//presence")[0]['from']
-      event = { from: jid, to: jid, event: "Answer" }
+      event = { from: jid, to: jid, event: "Answered" }
+      call = @ahn_log.calls.where(ahn_call_id: jid).last
     when /<input/
       event = process_input xml
     else
       event = nil
+      call = nil
     end
-    event
+    { event: event, call: call }
   end
 
   def process_dial(xml)
@@ -87,19 +96,22 @@ class RayoParser < AdhearsionParser
     @ahn_log.calls.create(is_master: false, sip_address: slave_sip,
                           master_call_id: master_call.id,
                           ahn_call_id: slave_call_id)
-    { from: master_call.ahn_call_id, to: slave_call_id, event: "Dial" } if ref_node["id"]
+    event = { from: master_call.ahn_call_id, to: slave_call_id, event: "Dial" } if ref_node["id"]
+    call = master_call
+    { event: event, call: call }
   end
 
   def process_offer(xml)
     if xml.xpath("//presence")[0]['to'] == @pb_user
       sip_address = xml.xpath("//offer")[0]['from']
       ahn_call_id = xml.xpath("//presence")[0]['from']
-      master_call = @ahn_log.calls.create(is_master: true, sip_address: sip_address, ahn_call_id: ahn_call_id)
-      @ahn_log.calls.create(is_master: false, master_call_id: master_call.id, sip_address: "Adhearsion", ahn_call_id: @pb_user)
-      { from: ahn_call_id, to: @pb_user, event: "Call" }
+      call = @ahn_log.calls.create(is_master: true, sip_address: sip_address, ahn_call_id: ahn_call_id)
+      @ahn_log.calls.create(is_master: false, master_call_id: call.id, sip_address: "Adhearsion", ahn_call_id: @pb_user)
+      event = { from: ahn_call_id, to: @pb_user, event: "Call" }
     else
-      nil
+      event, call = nil, nil
     end
+    { event: event, call: call }
   end
 
   def process_input(xml)
@@ -107,24 +119,32 @@ class RayoParser < AdhearsionParser
     when /<match/
       ahn_call_id = xml.xpath("//presence")[0]['from'].split("/")[0]
       input = xml.xpath("//input")[0].inner_text
-      event = { from: ahn_call_id, to: ahn_call_id, event: "ASR Input: \"#{input}\""}
+      event = { from: ahn_call_id, to: @pb_user, event: "ASR Input: \"#{input}\""}
+      call = @ahn_log.calls.where(ahn_call_id: ahn_call_id).last
     when /<nomatch/
       ahn_call_id = xml.xpath("//presence")[0]['from'].split("/")[0]
-      event = { from: ahn_call_id, to: ahn_call_id, event: "ASR NoMatch"}
+      event = { from: ahn_call_id, to: @pb_user, event: "ASR NoMatch"}
+      call = @ahn_log.calls.where(ahn_call_id: ahn_call_id).last
     else
+      call = nil
       event = nil #Waiting for data
     end
-    event
+    { call: call, event: event }
   end
 
   def process_output(xml)
     ahn_call_id = xml.xpath("//iq")[0]['to']
     if xml.xpath("//audio").empty?
       output = xml.xpath("//speak")[0].inner_text
-      { from: @pb_user, to: ahn_call_id, event: "TTS Output: \"#{output}\"" }
+      event = { from: @pb_user, to: ahn_call_id, event: "TTS Output: \"#{output}\"" }
+      master_call = @ahn_log.calls.where(ahn_call_id: ahn_call_id).last
+      call = @ahn_log.calls.where(ahn_call_id: @pb_user, master_call_id: master_call.id).last
     else
-      {from: @pb_user, to: ahn_call_id, event: "Output: Audio File" }
+      event = {from: @pb_user, to: ahn_call_id, event: "Output: Audio File" }
+      master_call = Call.where(ahn_call_id: ahn_call_id).last
+      call = @ahn_log.calls.where(ahn_call_id: @pb_user, master_call_id: master_call.id).last
     end
+    { call: call, event: event }
   end
   
 end

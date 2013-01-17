@@ -72,9 +72,9 @@ describe AdhearsionParser, focus: true do
 
     it "should create a new event" do
       message = "[2012-12-21 00:00:00] A message"
-      @parser.should_receive(:get_event).and_return({ from: "fake@ahnlogviz.net", to: "fake@ahnlogviz.net", event: "Hangup" })
+      @parser.should_receive(:get_event).and_return({ call: @call, event: { from: "fake@ahnlogviz.net", to: "fake@ahnlogviz.net", event: "Hangup" }})
       @call_events.should_receive(:create).with(log: message, time: DateTime.new(2012,12,21,0,0,0), from: "fake@ahnlogviz.net", to: "fake@ahnlogviz.net", event: "Hangup")
-      @parser.new_event(@call, message)
+      @parser.new_event(message)
     end
   end
 
