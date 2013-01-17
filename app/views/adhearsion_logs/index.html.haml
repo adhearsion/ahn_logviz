@@ -1,0 +1,17 @@
+- content_for :content_header do
+  Adhearsion LogViz: Home
+
+- content_for :content_body do
+  .divTable
+    .divRow
+      .divCell{ :style => "font-weight: bold; border: 1px solid black;" } Name
+      .divCell{ :style => "font-weight: bold; border: 1px solid black;" } Number of Calls
+      .divCell{ :style => "font-weight: bold; border: 1px solid black;" } Start Time
+    - @ahn_logs.each do |log|
+      .divRow
+        .divCell
+          = log.name
+        .divCell
+          = log.calls.count
+        .divCell
+          = log.start_time
