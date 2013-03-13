@@ -1,0 +1,6 @@
+%body
+  %h1 LogViz
+  - @logs.each do |log|
+    %a{:href => "/view?id=#{log.id}"}
+      = "#{log.name}"
+  %a{:href => '/upload'} Upload

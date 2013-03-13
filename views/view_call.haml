@@ -1,0 +1,8 @@
+%head
+  %script{:src => "http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"}
+  %script{:src => "/javascript/paper.js"}
+  %script{:src => "/javascript/logviz.ps.js"}
+%body
+  %canvas{:id => "drawing_canvas"}
+  %script{:type => "text/paperscript"}
+    draw(#{@call_count}, #{@event_count}, #{@calls_array}, #{@events_array});

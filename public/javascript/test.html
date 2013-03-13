@@ -1,0 +1,11 @@
+<html>
+  <head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="paper.js"></script>
+    <script src="logviz.ps.js"></script>
+    <title>TEST</title>
+  </head>
+    <canvas id="drawing_canvas"></canvas>
+    <script type="text/paperscript">
+      draw(3, 4, [["Call1", 100,250],["Call2", 175,350],["Call3",275, 400]], [[100, 125, 'to_self', "Answer",12],[100,200,null,"Dial",300],[300,300,null,"Dial",500],[300,320,'to_self',"Hangup",70]]);
+    </script>

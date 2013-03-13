@@ -1,0 +1,4 @@
+%body
+  - @calls.each do |call|
+    %a{:href => "/view_call?id=#{call.id}"}
+      = "#{call.uuid}"

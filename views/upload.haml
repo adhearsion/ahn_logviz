@@ -1,0 +1,6 @@
+%body
+  %form{ :method => "post", :action => "/create", :method => "post", :enctype => 'multipart/form-data' }
+    %fieldset
+      %input{ :type => "file", :name => "logfile" }
+      %input{ :type => "text", :name => "name" }
+      %input{ :type => "submit", :value => "Upload"}
