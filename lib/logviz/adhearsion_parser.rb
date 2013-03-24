@@ -8,7 +8,6 @@ module LogViz
       @ahn_log = ahn_log
       @line_number = 1
       @pb_user = nil
-      @events_lookup = YAML.load_file 'config/actions.yml'
     end
 
     def run
@@ -36,11 +35,11 @@ module LogViz
 
     def process_message(line)
       time = DateTime.strptime(line.match(/#{timestamp}/).to_s, "[%Y-%m-%d %H:%M:%S]")
-      call_uuid = line.match(/: \w{7}\-\w{3}\-\w{12,13}/).to_s
+      call_uuid = line.match(/: \w{7}\-\w{3}\-\w*/).to_s
       return unless line.index("#<")
       puts "PROCESSING LINE: #{line}"
       action_hash = process_action line[line.index("#")..-1]
-      action_hash['uuid'] = call_uuid.delete(": ").chomp '\n'
+      action_hash['uuid'] = call_uuid.delete(": ").strip
       event_hash = { time: time, message: action_hash, log: line }
       puts event_hash.inspect
       create_event event_hash
@@ -53,7 +52,7 @@ module LogViz
       action_string.gsub! /[\<\>]/, ''
 
       headers = hashify action_string.slice!(/headers.*\=\{..*\}/), "=>", true
-      if action_string.match /Complete/
+      if action_string.match /Input::Complete/
         action = "Input Complete"
         action_string.slice!(/^[^,]* /)
       else
@@ -67,51 +66,55 @@ module LogViz
     end
 
     def create_event(event_hash)
-      return unless @events_lookup.has_key? event_hash[:message]['action']
       message = event_hash[:message]
-      event = message['action']
-      @action_lookup = @events_lookup[event]
-      event += ": #{message[@action_lookup['value']]}" if !!@action_lookup['value']
-
-      if event == 'Offer'
-        message['call_id'].chomp!
-        @call = Call.first(adhearsion_log_id: @ahn_log.id, uuid: message['uuid']) || create_new_call(message)
-        if @call.is_master
-          from = message['call_id']
-          to   = 'adhearsion'
-        else
-          from = message['uuid']
-          to   = message['call_id']
-        end
-      else
-        @call = Call.first(adhearsion_log_id: @ahn_log.id, uuid: message['uuid']) || create_new_call(message)
-        from = message[@action_lookup['from']] || @action_lookup['from']
-        to = message[@action_lookup['to']] || @action_lookup['to']
-      end
-      event = @call.add_call_event CallEvent.create(action: event, from: from,
-       to: to, time: event_hash[:time], log: event_hash[:log])
-      puts "EVENT CREATED: #{event.inspect}"
-      @call.save
+      puts "SENDING EVENTPROCESSOR ##{message['action'].downcase}"
+      event = EventProcessor.send message['action'].downcase, message
+      return unless event
+      create_new_calls check_calls(event)
+      new_event = @call.add_call_event CallEvent.create(from: event[:from], to: event[:to], action: message['action'], time: event_hash[:time], log: event_hash[:log]) if @call
+      puts "EVENT CREATED: #{new_event.inspect}" if new_event
     end
 
-    def create_new_call(message)
-      is_master = message['uuid'].empty? || (Call.first(adhearsion_log: @ahn_log, uuid: message['uuid']).nil? && Call.first(adhearsion_log: @ahn_log, uuid: message[@action_lookup['to']]).nil?)
-      puts "MASTER: #{is_master}"
-      call_id = message['call_id'] || message['uuid']
-      sip_address = is_master ? message['from'] : message['to'] if message['action'] == "Offer"
-      master_call = Call.first(adhearsion_log: @ahn_log, uuid: message['uuid']) || Call.first(adhearsion_log: @ahn_log, uuid: message[@action_lookup['to']])
-      master_id = master_call.id if master_call
-      call = @ahn_log.add_call Call.create(sip_address: sip_address, uuid: message['call_id'], is_master: is_master,
-       master_id: master_id)
-      call.save
-      puts "MAIN CALL: #{call.errors.inspect}"
-      puts "MAIN CALL: #{call.valid?}"
-      puts "MAIN CALL: #{call.inspect}"
-      if is_master
-        @ahn_log.add_call Call.create(sip_address: 'Adhearsion', uuid: 'adhearsion', is_master: false,
-          master_id: call.id)
+    def check_calls(event)
+      if event[:check_master]
+        master = Call.first adhearsion_log: @ahn_log, uuid: event[:from]
+        call = Call.first adhearsion_log: @ahn_log, uuid: event[:to]
+        if master && call
+          call.is_master = false
+          call.master_id = master.id
+        end
       end
-      call
+      to_create = []
+      to_call = Call.first adhearsion_log: @ahn_log, uuid: event[:to]
+      from_call = Call.first adhearsion_log: @ahn_log, uuid: event[:from]
+      to_create += [{ uuid: event[:from], is_master: true, master_id: nil }] unless from_call
+      to_call_hash = { uuid: event[:to], is_master: false }
+      to_call_hash[:master_id] = from_call.id if from_call
+      to_create += [to_call_hash] unless to_call || to_call_hash[:uuid] == 'adhearsion' || event[:to] == event[:from]
+      @call = from_call if from_call
+      puts "CALLS TO CREATE: #{to_create.inspect}"
+      to_create
+    end
+
+    def create_new_calls(call_params)
+      get_master_id = true if call_params.length == 2
+      master_id = nil
+      call_params.each do |call_hash|
+        next if call_hash[:uuid].empty?
+        if call_hash[:is_master]
+          @call = @ahn_log.add_call Call.create(uuid: call_hash[:uuid], is_master: true, master_id: nil)
+          puts "NEW CALL CREATED: #{@call.inspect}"
+          master_id = @call.id
+          call = @ahn_log.add_call Call.create(uuid: 'adhearsion', is_master: false, master_id: master_id)
+          puts "NEW CALL CREATED: #{call.inspect}"
+        elsif master_id
+          call = @ahn_log.add_call Call.create(uuid: call_hash[:uuid], is_master: false, master_id: master_id)
+          puts "NEW CALL CREATED: #{call.inspect}"
+        elsif call_hash[:master_id]
+          call = @ahn_log.add_call Call.create(uuid: call_hash[:uuid], is_master: false, master_id: call_hash[:master_id])
+          puts "NEW CALL CREATED: #{call.inspect}"
+        end
+      end
     end
 
     def hashify(string, delimiter, named_attribute = false)
