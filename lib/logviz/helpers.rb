@@ -13,11 +13,22 @@ module LogViz
     end
 
     def call_view_data(call)
-      @calls = [call]
-      @calls.push Call.where(master_id: call.id).all
-      @calls.flatten!
-      @calls = get_additional_calls @calls
-      events = get_events @calls
+      x = 100
+      @y_vals = {}
+      @call_x_mapping = {}
+      @events_array = []
+      @calls_array = [call]
+      @calls_array = get_additional_calls @calls_array
+      @calls_array.push Call.where(master_id: call.id).all
+      @calls_array.flatten!
+      puts "CALLS: #{@calls_array}"
+      events = get_events @calls_array
+      @calls_array.each do |call|
+        @call_x_mapping[call.uuid] = x
+        x += 200
+      end
+      @calls_array.map! { |call| [call.uuid] }
+      puts "CALL X MAPPING: #{@call_x_mapping}"
       events.flatten!
       process_events events
       assign_y_vals
@@ -28,28 +39,31 @@ module LogViz
     def process_events(events)
       y = 100
       events.each do |event|
-        event_x = @call_x_mapping[event.from]
-        event_y = y
-        puts @y_vals.inspect
-        p "PUSHING TO Y VALS OF #{event.to} AND #{event.from}"
-        @y_vals[event.from] ||= []
-        @y_vals[event.to] ||= []
-        @y_vals[event.from].push y
-        p "PUSHED TO #{event.from}"
-        @y_vals[event.to].push y
-        if event.from == event.to
-          arrow_type = 'to_self'
-          name = event.action
-          ending_x = nil
-          y += 40
-        else
-          arrow_type = nil
-          name = event.action
-          ending_x = @call_x_mapping[event.to]
-          @y_vals[event.to].push y if @y_vals[event.to]
-          y += 20
+        if (event.to && event.from)
+          event_x = @call_x_mapping[event.from] || @call_x_mapping.values.last + 200
+          next if event_x.nil?
+          event_y = y
+          puts @y_vals.inspect
+          p "PUSHING TO Y VALS OF #{event.to} AND #{event.from}"
+          @y_vals[event.from] ||= []
+          @y_vals[event.to] ||= []
+          @y_vals[event.from].push y
+          p "PUSHED TO #{event.from}"
+          @y_vals[event.to].push y
+          if event.from == event.to
+            arrow_type = 'to_self'
+            name = event.action
+            ending_x = nil
+            y += 40
+          else
+            arrow_type = nil
+            name = event.action
+            ending_x = @call_x_mapping[event.to]
+            @y_vals[event.to].push y if @y_vals[event.to]
+            y += 20
+          end
+          @events_array.push [event_x, event_y, arrow_type, name, ending_x]
         end
-        @events_array.push [event_x, event_y, arrow_type, name, ending_x]
       end
     end
 
@@ -79,6 +93,7 @@ module LogViz
           @uuids.push(new_call)  
         end
       end
+      @uuids.uniq!
       @uuids.each do |uuid|
         call = Call.first(adhearsion_log: @ahn_log, uuid: uuid)
         calls.push call unless call.nil? || calls.index(call)
@@ -88,9 +103,7 @@ module LogViz
 
     def get_events(calls)
       events = []
-      calls.each do |call|
-        events.push CallEvent.where(call: call)
-      end
+      events.push CallEvent.where(call: calls).order(:time).all
       events
     end
 
