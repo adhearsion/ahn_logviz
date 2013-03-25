@@ -22,11 +22,11 @@ class EventProcessor
     end
 
     def join(message)
-      { from: message['call_id'].strip, to: message['uuid'], check_master: true }
+      { from: message['uuid'], to: message['call_id'].strip, check_master: true }
     end
 
     def unjoined(message)
-      { from: message['target_call_id'].strip, to: message['call_id'].strip}
+      { from: message['call_id'].strip, to: message['target_call_id'].strip}
     end
 
     def input(message)
