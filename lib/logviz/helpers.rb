@@ -19,7 +19,7 @@ module LogViz
       @events_array = []
       @calls_array = [call]
       @calls_array = get_additional_calls @calls_array
-      @calls_array.push Call.where(master_id: call.id).all
+      # @calls_array.push Call.where(master_id: call.id).all
       @calls_array.flatten!
       puts "CALLS: #{@calls_array}"
       events = get_events @calls_array
@@ -40,27 +40,35 @@ module LogViz
       y = 100
       events.each do |event|
         if (event.to && event.from)
-          event_x = @call_x_mapping[event.from] || @call_x_mapping.values.last + 200
+          if @call_x_mapping[event.from].nil?
+            @call_x_mapping[event.from] = @call_x_mapping.values.last + 200
+            @calls_array.push [event.from]
+          end
+          event_x = @call_x_mapping[event.from]
           next if event_x.nil?
           event_y = y
           puts @y_vals.inspect
           p "PUSHING TO Y VALS OF #{event.to} AND #{event.from}"
-          @y_vals[event.from] ||= []
-          @y_vals[event.to] ||= []
+          @y_vals[event.from] ||= []        
           @y_vals[event.from].push y
           p "PUSHED TO #{event.from}"
-          @y_vals[event.to].push y
           if event.from == event.to
             arrow_type = 'to_self'
             name = event.action
             ending_x = nil
             y += 40
           else
+            if @call_x_mapping[event.to].nil?
+              @call_x_mapping[event.to] = @call_x_mapping.values.last + 200
+              @calls_array.push [event.to]
+            end
+            @y_vals[event.to] ||= []
+            @y_vals[event.to].push y
             arrow_type = nil
             name = event.action
             ending_x = @call_x_mapping[event.to]
             @y_vals[event.to].push y if @y_vals[event.to]
-            y += 20
+            y += 40
           end
           @events_array.push [event_x, event_y, arrow_type, name, ending_x]
         end
@@ -88,8 +96,10 @@ module LogViz
         next unless call
         CallEvent.where(call: call).all.each do |event|
           new_call = nil
-          new_call = event.to unless @uuids.index(event.to)
-          new_call = event.from unless @uuids.index(event.from)
+          unless event.to == 'adhearsion' || event.from == 'adhearsion'
+            new_call = event.to unless @uuids.index(event.to)
+            new_call = event.from unless @uuids.index(event.from)
+          end
           @uuids.push(new_call)  
         end
       end

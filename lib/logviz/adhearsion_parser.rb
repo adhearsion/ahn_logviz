@@ -68,7 +68,7 @@ module LogViz
     def create_event(event_hash)
       message = event_hash[:message]
       puts "SENDING EVENTPROCESSOR ##{message['action'].downcase}"
-      event = EventProcessor.send message['action'].downcase, message
+      event = EventProcessor.send message['action'].downcase.gsub(' ', '_'), message
       return unless event
       create_new_calls check_calls(event)
       new_event = @call.add_call_event CallEvent.create(from: event[:from], to: event[:to], action: message['action'], time: event_hash[:time], log: event_hash[:log]) if @call
